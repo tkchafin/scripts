@@ -15,13 +15,20 @@ if( scalar( @ARGV ) == 0 ){
 
 #Parse arguments
 my %opts;
-getopts( 'p:i:hn:1:2:g:o:', \%opts );
+getopts( 'p:i:hn:1:2:g:o:x', \%opts );
 
 # kill if help option is true
 if( $opts{h} ){
   &help;
   die "U want halp?\n\n";
 }
+
+my $skip = 0;
+if ($opts{x}){
+  $skip = 1; 
+  print "Warning: You have chosen to skip checking for fixed SNPs...\n";
+  print "...Only filtering based on N and gap content.\n";
+} 
  
 #get options 
 my ($map, $phy, $n, $p1, $p2, $gap, $out) = &parseArgs(\%opts); 
@@ -61,7 +68,7 @@ my $pop1Align = &getColumns($pop1Ref);
 my $pop2Align = &getColumns($pop2Ref);
 
 #Parse pop1 and pop2 alignments for fixed SNPs
-my $toDelete = &parsePopAlignment($pop1Align, $pop2Align, $n, $gap);
+my $toDelete = &parsePopAlignment($pop1Align, $pop2Align, $n, $gap, $skip);
 
 #Delete flagged columns from the full alignment
 #another one parasitized from steve
@@ -96,6 +103,7 @@ reportMatrixContent($allRef);
 			[Default = 0.0; e.g. no gaps allowed] \n";
 	print "\t-o	: Output file name. [Default = out.phy]\n";
 	print "\t-h	: Displays this help message\n";
+	print "\t-x : Toggle to skip check for fixed SNP (and only filter Ns)\n";
 	print "\n\n";
 }
 
@@ -230,11 +238,12 @@ sub parsePopAlignment{
 	my $p2 = $_[1];
 	my $thresholdN = $_[2];
 	my $thresholdG = $_[3];
+	my $x = $_[4];
 	my @blacklist; 
 	
 	#To track fixed alleles in each pop
-	my $alleles1 = parseColumn($p1, $thresholdN, $thresholdG, \@blacklist); 
-	my $alleles2 = parseColumn($p2, $thresholdN, $thresholdG, \@blacklist);
+	my $alleles1 = parseColumn($p1, $thresholdN, $thresholdG, \@blacklist, $x); 
+	my $alleles2 = parseColumn($p2, $thresholdN, $thresholdG, \@blacklist, $x);
 	
 	#Make sure both pops have same number of columns
 	if ((scalar(@{$alleles1})) != (scalar(@{$alleles1}))){
@@ -252,7 +261,7 @@ sub parsePopAlignment{
 			}else{
 				#If both fixed for same allele
 				if ($alleles1->[$i] eq $alleles2->[$i]){
-					push(@blacklist, $i); 
+					push(@blacklist, $i) unless $x; 
 					next;
 				}
 			} 
@@ -268,6 +277,7 @@ sub parseColumn{
 	my $thresholdN = $_[1];
 	my $thresholdG = $_[2];
 	my $blistRef = $_[3];
+	my $x = $_[4];
 	
 	my @alleles;
 	
@@ -325,7 +335,7 @@ sub parseColumn{
 			}else{
 				#SNP must have been variable
 				$alleles[$key] = "V";
-				push(@{$blistRef}, $key); 
+				push(@{$blistRef}, $key) unless $x; 
 				next;
 			}
 		}
