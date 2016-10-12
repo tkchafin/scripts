@@ -83,7 +83,7 @@ for (my $loc = 0; $loc < $nchar; $loc++){
 	
 	#write p1 file
 	my $pop = 0;
-	print P1DATA "locus ",$loc+1, "\n";
+	print P1DATA "locus ",$loc, "\n";
 	foreach my $id (@pop1){
 		print P1DATA "pop ", $pop, "\n";
 		foreach my $ind (keys %{$pop1Ref}){
@@ -110,7 +110,7 @@ for (my $loc = 0; $loc < $nchar; $loc++){
 
 	#Write p2 file
 	$pop = 0;
-	print P2DATA "locus ",$loc+1, "\n";
+	print P2DATA "locus ",$loc, "\n";
 	foreach my $id (@pop2){
 		print P2DATA "pop ", $pop, "\n";
 		foreach my $ind (keys %{$pop2Ref}){
@@ -137,7 +137,7 @@ for (my $loc = 0; $loc < $nchar; $loc++){
 
 	#Populate admix file
 	$pop = 0;
-	print ADMIX "locus ",$loc+1, "\n";
+	print ADMIX "locus ",$loc, "\n";
 	foreach my $id (@popA){
 		print ADMIX "pop ", $pop, "\n";
 		foreach my $ind (keys %{$popaRef}){
