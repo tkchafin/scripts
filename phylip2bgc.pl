@@ -267,8 +267,6 @@ sub parsePhylip{
       if( $line =~ /^\w/ ){
         my @temp = split( /\s+/, $line); 
         my @arr = split(//, $temp[1]);
-        print "Arr: ",join(",",@arr),"\n";
-        print "Ref: ",\@arr,"\n";
         #push array ref into our hash
         $toReturn{$temp[0]} = \@arr;
       }
