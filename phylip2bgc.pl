@@ -85,7 +85,7 @@ for (my $loc = 0; $loc < $nchar; $loc++){
 	my $pop = 0;
 	print P1DATA "locus ",$loc, "\n";
 	foreach my $id (@pop1){
-		print P1DATA "pop ", $pop, "\n";
+		#print P1DATA "pop ", $pop, "\n";
 		foreach my $ind (keys %{$pop1Ref}){
 			if ($assignRef->{$ind} eq $id){
 				my $nuc = ${$pop1Ref->{$ind}}->[$loc];	
@@ -112,7 +112,7 @@ for (my $loc = 0; $loc < $nchar; $loc++){
 	$pop = 0;
 	print P2DATA "locus ",$loc, "\n";
 	foreach my $id (@pop2){
-		print P2DATA "pop ", $pop, "\n";
+		#print P2DATA "pop ", $pop, "\n";
 		foreach my $ind (keys %{$pop2Ref}){
 			if ($assignRef->{$ind} eq $id){
 				my $nuc = ${$pop2Ref->{$ind}}->[$loc];	
@@ -139,7 +139,7 @@ for (my $loc = 0; $loc < $nchar; $loc++){
 	$pop = 0;
 	print ADMIX "locus ",$loc, "\n";
 	foreach my $id (@popA){
-		print ADMIX "pop ", $pop, "\n";
+		#print ADMIX "pop ", $pop, "\n";
 		foreach my $ind (keys %{$popaRef}){
 			if ($assignRef->{$ind} eq $id){
 				my $nuc = ${$popaRef->{$ind}}->[$loc];	
