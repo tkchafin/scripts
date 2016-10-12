@@ -244,8 +244,8 @@ sub parsePopAlignment{
 		#Make sure to check anything fixed in pop1 is different 
 		#from fixed in pop2 
 		for(my $i=0; $i < scalar(@{$alleles1}); $i++){
-			my $check1 = $alleles1->[$i] =~ tr/NV-/NV-/;
-			my $check2 = $alleles2->[$i] =~ tr/NV-/NV-/;
+			my $check1 = $alleles1->[$i] =~ tr/NBDHV-/NBDHV-/;
+			my $check2 = $alleles2->[$i] =~ tr/NBDHV-/NBDHV-/;
 			#If either pop was variable, or fixed for gaps or Ns
 			if ($check1 > 0 || $check2 > 0){
 				next; 

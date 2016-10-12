@@ -15,7 +15,7 @@ if( scalar( @ARGV ) == 0 ){
 
 #Parse arguments
 my %opts;
-getopts( 'p:i:1:2:a:o:h', \%opts );
+getopts( 'p:i:1:2:a:o:hn:', \%opts );
 
 # kill if help option is true
 if( $opts{h} ){
@@ -24,7 +24,7 @@ if( $opts{h} ){
 }
  
 #get options 
-my ($map, $phy, $p1, $p2, $a, $out) = &parseArgs(\%opts); 
+my ($map, $phy, $p1, $p2, $a, $out, $n) = &parseArgs(\%opts); 
 
 #Extract pops into an array
 my @pop1 = split(/\+/,$p1);
@@ -48,7 +48,8 @@ print "Population 1 is: $p1\n";
 print "Population 2 is: $p2\n";
 print "Admixed population is: $a\n";
 print "Total taxa in phylip file: $ntax\n"; 
-print "Total characters in phylip data matrix: $nchar\n\n";
+print "Total characters in phylip data matrix: $nchar\n";
+print "Proportion of N's allowed in parental populations: $n\n";
 
 #Get pop alignments only with ind as key and array of seqs as value
 my $pop1Ref = &getMultPops($assignRef, $allRef, \@pop1);
@@ -71,6 +72,10 @@ if ($num1< 1){
   print "Found <$num2> individuals in population 2\n";
   print "Found <$num3> individuals in admixed population\n\n";
 }
+
+#filter for N content
+#Parse pop1 and pop2 alignments for columns with too many Ns
+my $toDelete = &parsePopAlignment($pop1Align, $pop2Align, $n);
 
 #Open filestreams
 open(ADMIX, "> admix.csv");
@@ -174,8 +179,8 @@ close ADMIX;
 
  sub help{
 	 
-	print "\nphylip2introgress.pl by Max Bangs, Tyler Chafin and Steve Mussmann\n";
-	print "\nThis script converts from phylip format to the input for Introgress R package.\n";
+	print "\nphylip2introgress.pl by Tyler Chafin with some code from Max Bangs and Steve Mussmann\n";
+	print "\nThis script converts from phylip format to the input for bgc.\n";
 	print "A population map should be given in a tab-delimited file, formatted as:\n";
 	print "\n\tSampleName\tPopID\n\n";
 	print "Where PopID can be a string or integer, and SampleName must exactly match a corresponsing line in the phylip file. Any samples not in the popmap will not be included in the output files.\n\n";
@@ -185,6 +190,7 @@ close ADMIX;
 	print "\t-2	: Identifier for population 2 (include multiple as: pop1+pop2)\n";
 	print "\t-a	: Identifier for admixed population(s) (include multiple as: pop1+pop2)\n";
 	print "\t-i	: Path to input file (phylip)\n";
+	print "\t-n	: Prop. of missing data (including gaps) allowed in parent pop to retain SNP [Def = 0.0] \n";
 	print "\t-o	: Output file name. [Default = out.phy]\n";
 	print "\t-h	: Displays this help message\n";
 	print "\n\n";
@@ -203,8 +209,9 @@ sub parseArgs{
   my $p2  = $opts{2} or die "\nPopulation 2 not specified.\n\n";
   my $a  = $opts{a} or die "\nNo admixed population specified.\n\n";
   my $out = $opts{o} || "out.phy"; 
+  my $n   = $opts{n} || 1.0; 
   #return
-  return ($map, $phy, $p1, $p2, $a, $out);
+  return ($map, $phy, $p1, $p2, $a, $out, $n);
 }
 
 #parse popmap file
@@ -343,43 +350,6 @@ sub getColumns{
 
 }	
 	
-#Subroutine to parse the alignment 
-sub parsePopAlignment{
-	
-	my $p1 = $_[0];
-	my $p2 = $_[1];
-	my $thresholdN = $_[2];
-	my $thresholdG = $_[3];
-	my @blacklist; 
-	
-	#To track fixed alleles in each pop
-	my $alleles1 = parseColumn($p1, $thresholdN, $thresholdG, \@blacklist); 
-	my $alleles2 = parseColumn($p2, $thresholdN, $thresholdG, \@blacklist);
-	
-	#Make sure both pops have same number of columns
-	if ((scalar(@{$alleles1})) != (scalar(@{$alleles1}))){
-		die "\nError: Y ur populations have not same sequence leNGTH???\n\n";
-	}else{
-		#Only keep loci which are differentially fixed 
-		#Make sure to check anything fixed in pop1 is different 
-		#from fixed in pop2 
-		for(my $i=0; $i < scalar(@{$alleles1}); $i++){
-			my $check1 = $alleles1->[$i] =~ tr/NV-/NV-/;
-			my $check2 = $alleles2->[$i] =~ tr/NV-/NV-/;
-			#If either pop was variable, or fixed for gaps or Ns
-			if ($check1 > 0 || $check2 > 0){
-				next; 
-			}else{
-				#If both fixed for same allele
-				if ($alleles1->[$i] eq $alleles2->[$i]){
-					push(@blacklist, $i); 
-					next;
-				}
-			} 
-		} 
-	}	
-	return(\@blacklist);
-}	
 	
 
 # subroutine to remove columns from an alignment, given the alignment contained in a hash and an array of positions in each value to be removed
@@ -455,4 +425,112 @@ sub phyprint{
   close OUT;
 
 }
+	
+#Subroutine to parse the alignment 
+sub parsePopAlignment{
+	
+	my $p1 = $_[0];
+	my $p2 = $_[1];
+	my $thresholdN = $_[2];
+	my @blacklist; 
+	
+	#To track fixed alleles in each pop
+	my $alleles1 = parseColumn($p1, $thresholdN, $thresholdN, \@blacklist); 
+	my $alleles2 = parseColumn($p2, $thresholdN, $thresholdN, \@blacklist);
+	
+	#Make sure both pops have same number of columns
+	if ((scalar(@{$alleles1})) != (scalar(@{$alleles1}))){
+		die "\nError: Y ur populations have not same sequence leNGTH???\n\n";
+	}else{
+		#Only keep loci which are differentially fixed 
+		#Make sure to check anything fixed in pop1 is different 
+		#from fixed in pop2 
+		for(my $i=0; $i < scalar(@{$alleles1}); $i++){
+			my $check1 = $alleles1->[$i] =~ tr/NBDHV-/NBDHV-/;
+			my $check2 = $alleles2->[$i] =~ tr/NBDHV-/NBDHV-/;
+			#If either pop was variable, or fixed for gaps or Ns
+			if ($check1 > 0 || $check2 > 0){
+				next; 
+			}else{
+				#If both fixed for same allele
+				if ($alleles1->[$i] eq $alleles2->[$i]){
+					push(@blacklist, $i); 
+					next;
+				}
+			} 
+		} 
+	}	
+	return(\@blacklist);
+}	
 
+#internal subroutine to parse columns
+sub parseColumn{
+	
+	my $hash = $_[0];
+	my $thresholdN = $_[1];
+	my $thresholdG = $_[2];
+	my $blistRef = $_[3];
+	
+	my @alleles;
+	
+	foreach my $key (sort keys %{$hash}){
+		#Get length of aligned column
+		my $length = length(${$hash}{$key})*2; #Assumes 2N alleles, diplod
+		#Get nucleotide frequencies for column
+		my ($freqRef) = &parseDipSeq(${$hash}{$key});
+		
+		#parse frequencies 
+		my $ncontent = ($freqRef->{"N"} / $length);
+		my $gcontent = ($freqRef->{"-"} / $length);
+		
+	
+		#if gap freq > gap threshold add to blacklist
+		if (sprintf( "%.2f", $gcontent ) > sprintf( "%.2f", $thresholdG)){
+			#Put N in alleles array and add column to blacklist
+			$alleles[$key] = "-";
+			push(@{$blistRef}, $key);
+			next;
+		#if N freq > N threshold add to blacklist	
+		}elsif (sprintf( "%.2f", $ncontent ) > sprintf( "%.2f", $thresholdN)){
+			#Put N in alleles array and add column to blacklist
+			$alleles[$key] = "N";
+			push(@{$blistRef}, $key);
+			next;
+		}else{
+			#If any freq = length *2 (assuming diploid)
+			my $seen = 0; 
+			my $fixed = 0;
+			my $pick = "";
+			foreach my $nuc(keys %{$freqRef}){
+				#Skip Ns and gaps
+				if ($nuc eq "N" || $nuc eq "-"){
+					next;
+				#If nuc has non-zero frequency
+				}elsif ($freqRef->{$nuc} != 0){
+					if ($seen == 1){
+						$fixed = 1;
+						last; 
+					}else{
+						$seen = 1; 
+						$pick = $nuc;
+						next;
+					}
+					$pick = $nuc; 
+					next; 
+				}	
+			}
+			
+			#If a fixed SNP was found
+			if ($fixed == 0){		
+				#Set allele to V and blacklist column
+				$alleles[$key] = $pick;
+			}else{
+				#SNP must have been variable
+				$alleles[$key] = "V";
+				push(@{$blistRef}, $key); 
+				next;
+			}
+		}
+	}
+	return(\@alleles);
+}
