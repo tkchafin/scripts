@@ -83,7 +83,7 @@ for (my $loc = 0; $loc < $nchar; $loc++){
 	
 	#write p1 file
 	my $pop = 0;
-	print P1DATA "locus ",$loc+1, "\n";
+	print P1DATA "locus ",$loc, "\n";
 	foreach my $id (@pop1){
 		print P1DATA "pop ", $pop, "\n";
 		foreach my $ind (keys %{$pop1Ref}){
