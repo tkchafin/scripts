@@ -15,12 +15,17 @@ if( scalar( @ARGV ) == 0 ){
 
 #Parse arguments
 my %opts;
-getopts( 'p:i:1:2:a:o:h', \%opts );
+getopts( 'p:i:1:2:a:o:hc', \%opts );
 
 # kill if help option is true
 if( $opts{h} ){
   &help;
   die "Help menu\n\n";
+}
+
+my $comb = 0;
+if( $opts{c} ){
+  $comb = 1;
 }
  
 #get options 
@@ -74,9 +79,9 @@ if ($num1< 1){
 
 
 #Open filestreams
-open(ADMIX, "> admix.csv");
-open(P1DATA, "> p1data.csv");
-open(P2DATA, "> p2data.csv");
+open(ADMIX, "> admix.txt");
+open(P1DATA, "> p1in.txt");
+open(P2DATA, "> p2in.txt");
 
 #format and print files for bgc
 for (my $loc = 0; $loc < $nchar; $loc++){
@@ -134,29 +139,57 @@ for (my $loc = 0; $loc < $nchar; $loc++){
 
 
 	#Populate admix file
-	$pop = 0;
-	print ADMIX "locus ",$loc, "\n";
-	foreach my $id (@popA){
-		print ADMIX "pop ", $pop, "\n";
-		foreach my $ind (keys %{$popaRef}){
-			if ($assignRef->{$ind} eq $id){
-				my $nuc = ${$popaRef->{$ind}}->[$loc];	
-				$nuc =~ s/A/1	1/gi;
-				$nuc =~ s/T/2	2/gi;
-				$nuc =~ s/G/3	3/gi;
-				$nuc =~ s/C/4	4/gi;
-				$nuc =~ s/W/1	2/gi;
-				$nuc =~ s/R/1	3/gi;
-				$nuc =~ s/M/1	4/gi;
-				$nuc =~ s/K/3	2/gi;
-				$nuc =~ s/Y/2	4/gi;
-				$nuc =~ s/S/3	4/gi;
-				$nuc =~ s/-/-9	-9/gi;
-				$nuc =~ s/N/-9	-9/gi;
-				print ADMIX $nuc, "\n";
-			}	
+	if ($comb == 0){
+		$pop = 0;
+		print ADMIX "locus ",$loc, "\n";
+		foreach my $id (@popA){
+			print ADMIX "pop ", $pop, "\n";
+			foreach my $ind (keys %{$popaRef}){
+				if ($assignRef->{$ind} eq $id){
+					my $nuc = ${$popaRef->{$ind}}->[$loc];	
+					$nuc =~ s/A/1	1/gi;
+					$nuc =~ s/T/2	2/gi;
+					$nuc =~ s/G/3	3/gi;
+					$nuc =~ s/C/4	4/gi;
+					$nuc =~ s/W/1	2/gi;
+					$nuc =~ s/R/1	3/gi;
+					$nuc =~ s/M/1	4/gi;
+					$nuc =~ s/K/3	2/gi;
+					$nuc =~ s/Y/2	4/gi;
+					$nuc =~ s/S/3	4/gi;
+					$nuc =~ s/-/-9	-9/gi;
+					$nuc =~ s/N/-9	-9/gi;
+					print ADMIX $nuc, "\n";
+				}	
+			}
+			$pop++;
 		}
-		$pop++;
+	}else{
+		print ADMIX "locus ",$loc, "\n";
+		print ADMIX "pop 0\n";
+		foreach my $id (@popA){
+			foreach my $ind (keys %{$popaRef}){
+				if ($assignRef->{$ind} eq $id){
+					my $nuc = ${$popaRef->{$ind}}->[$loc];	
+					$nuc =~ s/A/1	1/gi;
+					$nuc =~ s/T/2	2/gi;
+					$nuc =~ s/G/3	3/gi;
+					$nuc =~ s/C/4	4/gi;
+					$nuc =~ s/W/1	2/gi;
+					$nuc =~ s/R/1	3/gi;
+					$nuc =~ s/M/1	4/gi;
+					$nuc =~ s/K/3	2/gi;
+					$nuc =~ s/Y/2	4/gi;
+					$nuc =~ s/S/3	4/gi;
+					$nuc =~ s/-/-9	-9/gi;
+					$nuc =~ s/N/-9	-9/gi;
+					print ADMIX $nuc, "\n";
+				}	
+			}
+		}
+		
+		
+		
 	}	
 	
 }
@@ -186,6 +219,7 @@ close ADMIX;
 	print "\t-i	: Path to input file (phylip)\n";
 	print "\t-n	: Prop. of missing data (including gaps) allowed in parent pop to retain SNP [Def = 0.0] \n";
 	print "\t-o	: Output file name. [Default = out.phy]\n";
+	print "\t-c	: Combine admixed populations under a single label [boolean]\n";
 	print "\t-h	: Displays this help message\n";
 	print "\n\n";
 }
