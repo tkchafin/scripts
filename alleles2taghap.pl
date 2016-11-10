@@ -119,6 +119,7 @@ exit;
 	print "	- If populations to include/exclude are not given, all samples in popmap are used.\n";
 	print "	- You can specify multiple popIDs as: ID1+ID2+ID3, as long as these match IDs in popmap\n";
 	print "	- For the -s filter, singletons are evaluated within the selected subset of individuals\n";
+	print "	- Three-nucleotide ambiguities are treated as N's (V,H,D,B)\n";
 	print "\nOptions:\n";
 	print "\t-a	: Path to input file (.alleles)\n";
 	print "\t-p	: Path to popmap file (tab-delimited)\n";
@@ -418,7 +419,7 @@ sub parseColumnMatrix{
     $i =~ tr/-// > 0 and next;
 
     #If there are Ns, skip column
-    $i =~ tr/Nn// > 0 and next;
+    $i =~ tr/NnVvHhDdBb// > 0 and next;
     
     my $a = ($i =~ tr/Aa// > 0);
     my $c = ($i =~ tr/Cc// > 0);
