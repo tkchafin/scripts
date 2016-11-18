@@ -79,7 +79,7 @@ my $indPercent = $indProp*100;
 print "Retaining individuals with at least <$indPercent%> (N=<$indCov>) passing loci present...\n";
 print IND "Individual	LociFound	Retained?\n";
 my $kept = 0; 
-for my $ind (sort keys $assignRef){
+for my $ind (sort keys %{$assignRef}){
 	print IND "$ind \t $assignRef->{$ind}\t";
 	if ($assignRef->{$ind} >= $indCov){
 		print IND "Y\n";
