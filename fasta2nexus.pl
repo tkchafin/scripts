@@ -5,26 +5,21 @@ use warnings;
 use Getopt::Long;
 use File::Path;
 use File::Basename;
-use Parallel::ForkManager; 
 
 # Declare variables
 
-our @input;     
-our $PROCS=1; 
+my @input;     
 #our $infiletype=1; 
 
 parseArgs(); 
     
 my ( $filepath, $dirpath ) = fileparse($input[0]);    
-my $pm = Parallel::ForkManager->new($PROCS); 
 
 #Iterate through files
 
 @input = glob "@input";
 
 foreach my $file ( @input ){ 
-
-  $pm->start and next; #Begin one daughter process, start the next.
 	
 #Initialize variables within each daughter process
     my @data;
@@ -77,11 +72,8 @@ MATRIX\n";
     print OUT "END;\n\n";
     
     close OUT; 	
-  $pm->finish;   #Indicate that daughter process is complete
 }
 
-
-$pm->wait_all_children;   #Wait for all daughter processes before exiting program.
 
 exit;
 ###########################SUBROUTINES###################################
@@ -91,13 +83,11 @@ sub parseArgs{
 	my $usage ="\nUsage: $0 --i /path/to/input/directory/*.fasta
 Mandatory 
 	-i, --input	-  path to the input files in fasta format 
-	-p, --procs	-  Number of processes for multithreading [default=1]
 \n";
 
 	my $options = GetOptions 
 		( 
 		'input|i=s{1,}'		=>	\@input,
-		'procs|p=i'		=>	\$PROCS,
 		);
 		
 	@input or die "\n\nDo I need to call the short bus?: Input not specified!\n\n$usage\n"; 
