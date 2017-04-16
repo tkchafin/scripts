@@ -15,7 +15,7 @@ if( scalar( @ARGV ) == 0 ){
 
 #Parse arguments
 my %opts;
-getopts( 'g:f:s:x:y:o:ht:r:', \%opts );
+getopts( 'g:f:s:x:y:o:ht:r:1:2:3:4:5:6:7:8:9:A:B:C:b', \%opts );
 
 # kill if help option is true
 if( $opts{h} ){
@@ -24,8 +24,8 @@ if( $opts{h} ){
 }
  
 #get options 
-my ($geo, $seq, $samp, $x, $y, $out, $skip, $thresh, $rand) = &parseArgs(\%opts); 
- 
+my ($geo, $seq, $samp, $x, $y, $out, $skip, $thresh, $rand, $resample) = &parseArgs(\%opts); 
+my ($A, $B, $C, $a1, $a2, $a3, $a4, $a5, $a6, $a7, $a8, $a9) = &parseSAMOVAArgs(\%opts); 
 
 #Get FASTA sequences, read into hash
 my %seqHash; 
@@ -46,7 +46,7 @@ while (<ALN>){
 			my $len = length($_)+1;
 			print "Warning! You asked to sample more columns than exist in your alignment! Setting <-r> to sequence length ($len)\n";
 		}
-        $getNucsRef = &generatePositions(length($_), $rand); 
+        $getNucsRef = &generatePositions(length($_), $rand, $resample); 
       } 
       #Randomly sample sequence columns
 	  my $newString = &sampleString($_, $getNucsRef);
@@ -169,8 +169,13 @@ print "\nArlequin input written to: $out.arp\n";
 print "Coordinate outputs written to: $out.geo\n";
 print "Number of collapsed populations: $popCount\n";
 print "Number of populations of only one individual: $singletonCount\n";
-$rand and print "Number of nucleotide columns randomly sampled: $rand\n";
-$rand and print "Outputted resampled alignment as FASTA to: $out.sampled\n";
+if ($rand){
+  print "Number of nucleotide columns randomly sampled: $rand\n";
+  my $bool = "FALSE";
+  $resample and $bool = "TRUE";
+  print "Nucleotides sampled with replacement: $bool\n";
+  print "Outputted resampled alignment as FASTA to: $out.sampled\n";
+}
 print "\nDone!\n\n";
 exit;
 
@@ -183,19 +188,35 @@ exit;
 	print "A tab-delimited file containing columns for sample names and geographic coordinates should be provided. By default, sample names are assumed to be in column 1, with X and Y coordinates in columns 2 and 3.\n";
 	print "\nNOTE: Sample names should correspond exactly across sequence and coordinates files.\n\n";
 	print "NOTE: Sample clustering is in a very primitive state. A hard numerical 'distance' will be calculated as the hypotenuse length using X and Y distances (calculated as the absolute value of difference in coordinate values), and if below the threshold value will be clumped. Population coordinate will be determined using the first sampled individual for the population.\n\n";
-	
+	print "NOTE: This script will output with WINDOWS EOL markers\n\n";
 	print "Mandatory arguments:\n";
 	print "\t-g	: Path to coordinates file (tab-delimited)\n";
 	print "\t-f	: Path to sequence file (fasta)\n\n";
 	print "Optional arguments:\n";
-	print "\t-s	: Threshold difference in coordinates to cluster samples into a pop [default=0.001]\n";
+	print "\t-t	: Threshold difference in coordinates to cluster samples into a pop [default=0.001]\n";
 	print "\t-s	: Column in coordinates file with sample IDs [default=1]\n";
 	print "\t-x	: Column in coordinates file with X coordinate [default=2]\n";
 	print "\t-y	: Column in coordinates file with Y coordinate [default=3]\n";
 	print "\t-o	: Output file prefix [Default = out]\n";
 	print "\t-k : Lines to skip in coordinates file [default = 1, assumes header line]\n";
 	print "\t-r : Randomly sample X positions from sequences [Default=0, no sampling]\n";
+	print "\t-b : Toggle on replacement for random sampling- can be used to generate bootstraps\n";
 	print "\t-h	: Displays this help message\n";
+	
+	print "\nSAMOVA arguments:\n";
+	print "\t-1	: DISTMETAMOVA [default=5]\n";
+	print "\t-2	: GAMMAVALUE [default=0.17]\n";
+	print "\t-3	: MISSING_LEVEL [default=0.05]\n";
+	print "\t-4	: TRANSITION_WEIGHT [default=1]\n";
+	print "\t-5	: TRANSVERSION_WEIGHT [default=1]\n";
+	print "\t-6	: DELETION_WEIGHT [default=1]\n";
+	print "\t-7	: NUM_GROUPS [default=2]\n";
+	print "\t-8	: NUM_INIT_CONDS [default=10]\n";
+	print "\t-9	: NO_GEO_STRUCTURE [default=0]\n";
+	print "\t-A	: SA_NUM_STEPS [default=10000]\n";
+	print "\t-B	: SA_EXP_FACTOR [default=0.915811421]\n";
+	print "\t-C	: SIMULATIONS [default=0]\n";
+	
 	print "\n\n";
 }
 
@@ -215,19 +236,47 @@ sub parseArgs{
   my $skipt = $opts{k} || 1;
   my $threshT = $opts{t} || 0.001; 
   my $r = $opts{r} || 0;
+  my $b = $opts{b} || 0;
   #return
-  return ($geot, $seqt, $st, $xt, $yt, $outt, $skipt, $threshT, $r);
+  return ($geot, $seqt, $st, $xt, $yt, $outt, $skipt, $threshT, $r, $b);
 }
+
+#parse SAMOVA arguments
+sub parseSAMOVAArgs{
+
+  my( $params ) =  @_;
+  my %opts = %$params;
+  
+  #defaults
+  my $t1 = $opts{1} || 5;
+  my $t2 = $opts{2} || 0.17;
+  my $t3 = $opts{3} || 0.05;
+  my $t4 = $opts{4} || 1;
+  my $t5 = $opts{5} || 1;
+  my $t6 = $opts{6} || 1;
+  my $t7 = $opts{7} || 2;
+  my $t8 = $opts{8} || 10;
+  my $t9 = $opts{9} || 0;
+  my $ta = $opts{A} || 10000;
+  my $tb = $opts{B} || 0.915811421;
+  my $tc = $opts{B} || 0;
+  #return
+  return ($ta, $tb, $tc, $t1, $t2, $t3, $t4, $t5, $t6, $t7, $t8, $t9);
+}
+
 
 #generate list of integer positions to sample
 sub generatePositions{
 	#print "From generatePositions:\n";
 	my $max = $_[0];
 	my $howMany = $_[1];
+	my $how = $_[2];
 	my %returnMap; 
 	my @returnArray;
 	for (my $i=0; $i < $howMany; $i++){
+		#$how == 0 and my $num = int(&randomNumsWithoutReplacement($max, \%returnMap));
 		my $num = int(&randomNumsWithoutReplacement($max, \%returnMap));
+		#$how == 1 and my $num = int(&randomNumsWitReplacement($max));
 		#print "Found a number: $num\n";
 		$returnMap{$num} = "";
 		push(@returnArray, $num);
@@ -242,6 +291,12 @@ sub randomNumsWithoutReplacement{
 	while(exists $already->{$returnNum}){
 		$returnNum = rand($m); 
 	}
+	return $returnNum;
+}
+
+sub randomNumsWithReplacement{
+	my $m = $_[0];
+	my $returnNum = rand($m); 
 	return $returnNum;
 }
 
