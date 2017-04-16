@@ -15,7 +15,7 @@ if( scalar( @ARGV ) == 0 ){
 
 #Parse arguments
 my %opts;
-getopts( 'p:i:1:2:a:o:hc', \%opts );
+getopts( 'p:i:1:2:a:o:hcn:', \%opts );
 
 # kill if help option is true
 if( $opts{h} ){
@@ -217,7 +217,6 @@ close ADMIX;
 	print "\t-2	: Identifier for population 2 (include multiple as: pop1+pop2)\n";
 	print "\t-a	: Identifier for admixed population(s) (include multiple as: pop1+pop2)\n";
 	print "\t-i	: Path to input file (phylip)\n";
-	print "\t-n	: Prop. of missing data (including gaps) allowed in parent pop to retain SNP [Def = 0.0] \n";
 	print "\t-o	: Output file name. [Default = out.phy]\n";
 	print "\t-c	: Combine admixed populations under a single label [boolean]\n";
 	print "\t-h	: Displays this help message\n";

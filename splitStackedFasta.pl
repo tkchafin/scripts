@@ -57,7 +57,7 @@ while (<FASTA>){
 			undef($count);
 			undef($base);
 			next;
-		}elsif ($cap != 0){
+		}elsif ($max != 0){
 			$count > $max and $count = $max;
 		}
 		for (my $i=1; $i <= $count; $i++){
