@@ -15,7 +15,7 @@ if( scalar( @ARGV ) == 0 ){
 
 #Parse arguments
 my %opts;
-getopts( 'g:f:s:x:y:o:ht:', \%opts );
+getopts( 'g:f:s:x:y:o:ht:r:', \%opts );
 
 # kill if help option is true
 if( $opts{h} ){
@@ -24,11 +24,13 @@ if( $opts{h} ){
 }
  
 #get options 
-my ($geo, $seq, $samp, $x, $y, $out, $skip, $thresh) = &parseArgs(\%opts); 
+my ($geo, $seq, $samp, $x, $y, $out, $skip, $thresh, $rand) = &parseArgs(\%opts); 
+ 
 
 #Get FASTA sequences, read into hash
 my %seqHash; 
 my $sample; 
+my $getNucsRef = ""; 
 open (ALN, "$seq") || die "Error: Cannot open file $seq: $!\n\n"; 
 while (<ALN>){
   chomp; 
@@ -37,6 +39,19 @@ while (<ALN>){
     $sample =~ s/>//;
     next;
   }else{
+    if ($rand != 0){
+      if ($getNucsRef eq ""){ #If first sample, generate list of positions to sample
+		open (RAN, ">$out.sampled") || die "Error: Cannot open file $out.sampled: $!\n";
+		if ($rand > length($_)){
+			my $len = length($_)+1;
+			print "Warning! You asked to sample more columns than exist in your alignment! Setting <-r> to sequence length ($len)\n";
+		}
+        $getNucsRef = &generatePositions(length($_), $rand); 
+      } 
+      #Randomly sample sequence columns
+	  my $newString = &sampleString($_, $getNucsRef);
+	  print RAN ">$sample\n$newString\n";
+    }
     $seqHash{$sample} = $_;
     #print "$sample: $_\n";
     $sample = "";
@@ -44,6 +59,12 @@ while (<ALN>){
   }
 }
 close ALN; 
+$rand and close RAN;
+
+
+exit;
+
+
 
 #Get coordinates from coordinate file for each sample
 open (GEO, "$geo") || die "Error: Cannot open file $geo: $!\n\n";
@@ -148,8 +169,9 @@ print "\nArlequin input written to: $out.arp\n";
 print "Coordinate outputs written to: $out.geo\n";
 print "Number of collapsed populations: $popCount\n";
 print "Number of populations of only one individual: $singletonCount\n";
-$singletonCount>0 and print "Warning: SAMOVA may not work properly with singleton sites!\n\n";
-print "Done!\n\n";
+$rand and print "Number of nucleotide columns randomly sampled: $rand\n";
+$rand and print "Outputted resampled alignment as FASTA to: $out.sampled\n";
+print "\nDone!\n\n";
 exit;
 
  ########################### SUBROUTINES ###############################
@@ -172,6 +194,7 @@ exit;
 	print "\t-y	: Column in coordinates file with Y coordinate [default=3]\n";
 	print "\t-o	: Output file prefix [Default = out]\n";
 	print "\t-k : Lines to skip in coordinates file [default = 1, assumes header line]\n";
+	print "\t-r : Randomly sample X positions from sequences [Default=0, no sampling]\n";
 	print "\t-h	: Displays this help message\n";
 	print "\n\n";
 }
@@ -191,33 +214,53 @@ sub parseArgs{
   my $outt = $opts{o} || "out"; 
   my $skipt = $opts{k} || 1;
   my $threshT = $opts{t} || 0.001; 
+  my $r = $opts{r} || 0;
   #return
-  return ($geot, $seqt, $st, $xt, $yt, $outt, $skipt, $threshT);
+  return ($geot, $seqt, $st, $xt, $yt, $outt, $skipt, $threshT, $r);
 }
 
-#parse popmap file
-sub parsePopmap{
-	
-	my $toParse = $_[0]; 
-	
-	#vars
-	my %toReturn; 
-	
-	#open popmap
-	open (POP, $toParse) or die "Oh no! Cannot open $toParse: $!\n"; 
-	
-	while (my $line = <POP>){
-	  chomp $line; 
-
-	  #ignore if blank
-      if( $line =~ /^\w/ ){
-        my @temp = split( /\s+/, $line); 
-
-        #push into our hash
-        $toReturn{$temp[0]} = $temp[1];
-      }
+#generate list of integer positions to sample
+sub generatePositions{
+	#print "From generatePositions:\n";
+	my $max = $_[0];
+	my $howMany = $_[1];
+	my %returnMap; 
+	my @returnArray;
+	for (my $i=0; $i < $howMany; $i++){
+		my $num = int(&randomNumsWithoutReplacement($max, \%returnMap));
+		#print "Found a number: $num\n";
+		$returnMap{$num} = "";
+		push(@returnArray, $num);
 	}
-	
-	close POP;
-	return( \%toReturn);
+	return \@returnArray;
 }
+
+sub randomNumsWithoutReplacement{
+	my $m = $_[0];
+	my $already = $_[1];
+	my $returnNum = rand($m); 
+	while(exists $already->{$returnNum}){
+		$returnNum = rand($m); 
+	}
+	return $returnNum;
+}
+
+sub sampleString{
+
+	my $oldString = $_[0];
+	my $toSample = $_[1];
+	my $returnString = ""; 
+
+	for my $i(0 .. $#{$toSample}){
+		$returnString .= substr($oldString, ($toSample->[$i])-1, 1);
+	}
+	return $returnString;
+}
+
+
+
+
+
+
+
+
