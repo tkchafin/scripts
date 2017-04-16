@@ -51,19 +51,19 @@ while (<ALN>){
       #Randomly sample sequence columns
 	  my $newString = &sampleString($_, $getNucsRef);
 	  print RAN ">$sample\n$newString\n";
+	  $seqHash{$sample} = $newString;
+      $sample = "";
+      next;
+    }else{
+      $seqHash{$sample} = $_;
+      #print "$sample: $_\n";
+      $sample = "";
+      next;
     }
-    $seqHash{$sample} = $_;
-    #print "$sample: $_\n";
-    $sample = "";
-    next;
   }
 }
 close ALN; 
 $rand and close RAN;
-
-
-exit;
-
 
 
 #Get coordinates from coordinate file for each sample
