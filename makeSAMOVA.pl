@@ -45,12 +45,13 @@ while (<ALN>){
 		if ($rand > length($_)){
 			my $len = length($_)+1;
 			print "Warning! You asked to sample more columns than exist in your alignment! Setting <-r> to sequence length ($len)\n";
+			$rand = $len;
 		}
         $getNucsRef = &generatePositions(length($_), $rand, $resample); 
       } 
       #Randomly sample sequence columns
 	  my $newString = &sampleString($_, $getNucsRef);
-	  print RAN ">$sample\n$newString\n";
+	  print RAN ">$sample\r\n$newString\r\n";
 	  $seqHash{$sample} = $newString;
       $sample = "";
       next;
@@ -140,33 +141,52 @@ foreach my $key (sort keys %geoHash){
 open (COORD, ">$out.geo") || die "Error: Cannot open file $out.geo: $!\n";
 open (ARP, ">$out.arp") || die "Error: Cannot open file $out.arp: $!\n";
 
-print ARP "#ARlequin input file written by makeSAMOVA.pl\n\n";
-print ARP "[PROFILE]\n\tTitle=\"SAMOVA\"\n";
+print ARP "#ARlequin input file written by makeSAMOVA.pl\r\n\r\n";
+print ARP "[PROFILE]\r\n\tTitle=\"SAMOVA\"\r\n";
 my $nb = keys %popHash;
-print ARP "\tNbSamples=$nb\n\n\tGenotypicData=0\n\tGameticPhase=0\n";
-print ARP "\tRecessiveData=0\n\tDataType=DNA\n\tLocusSeparator=NONE\n";
-print ARP "\tMissingData='?'\n\n[Data]\n\t[[Samples]]\n\n";
+print ARP "\tNbSamples=$nb\r\n\r\n\tGenotypicData=0\r\n\tGameticPhase=0\r\n";
+print ARP "\tRecessiveData=0\r\n\tDataType=DNA\r\n\tLocusSeparator=NONE\r\n";
+print ARP "\tMissingData='?'\r\n\r\n[Data]\r\n\t[[Samples]]\r\n\r\n";
 
 my $popCount=1;
 my $singletonCount=0;
 foreach my $pop (sort keys %popHash){
-  print COORD "$popCount\t\"pop$pop\"\t$popHash{$pop}->[0]\t1\n";
-  print ARP "\t\tSampleName=\"pop$pop\"\n";
+  print COORD "$popCount\t\"pop$pop\"\t$popHash{$pop}->[0]\t1\r\n";
+  print ARP "\t\tSampleName=\"pop$pop\"\r\r\n";
   my $size = $#{$popHash{$pop}};
-  print ARP "\t\tSampleSize=$size\n\t\tSampleData={\n";
+  print ARP "\t\tSampleSize=$size\r\r\n\t\tSampleData={\r\n";
   $size == 1 and $singletonCount++;
   for (my $i=1; $i <= $#{$popHash{$pop}}; $i++){
-    print ARP "$popHash{$pop}->[$i]\t1\t$seqHash{$popHash{$pop}->[$i]}\n";
+    print ARP "$popHash{$pop}->[$i]\t1\t$seqHash{$popHash{$pop}->[$i]}\r\n";
   }
-  print ARP "\n}\n";
+  print ARP "\r\n}\r\n";
   $popCount++;
 }
 close COORD;
 close ARP;
 
+#Write SAMOVA options 
+open (SAR, ">$out.sar") || die "Error: Cannot open file $out.sar: $!\n";
+print SAR "FILE_NAME\t$out\r\nDATATYPE\t0\r\n";
+print SAR "DISTMETAMOVA\t$a1\r\n";
+print SAR "GAMMAVALUE\t$a2\r\n";
+print SAR "MISSING_LEVEL\t$a3\r\n";
+print SAR "TRANSITION_WEIGHT\t$a4\r\n";
+print SAR "TRANSVERSION_WEIGHT\t$a5\r\n";
+print SAR "DELETION_WEIGHT\t$a6\r\n";
+print SAR "NUM_GROUPS\t$a7\r\n";
+print SAR "NUM_INIT_CONDS\t$a8\r\n";
+print SAR "NO_GEO_STRUCTURE\t$a9\r\n";
+print SAR "SA_NUM_STEPS\t$A\t\r\n";
+print SAR "SA_EXP_FACTOR\t$B\r\n";
+print SAR "SIMULATIONS\t$C\r\n";
+close SAR;
+
+
 #Report some stuff
 print "\nArlequin input written to: $out.arp\n";
 print "Coordinate outputs written to: $out.geo\n";
+print "SAMOVA options written to: $out.sar\n";
 print "Number of collapsed populations: $popCount\n";
 print "Number of populations of only one individual: $singletonCount\n";
 if ($rand){
@@ -190,17 +210,17 @@ exit;
 	print "NOTE: Sample clustering is in a very primitive state. A hard numerical 'distance' will be calculated as the hypotenuse length using X and Y distances (calculated as the absolute value of difference in coordinate values), and if below the threshold value will be clumped. Population coordinate will be determined using the first sampled individual for the population.\n\n";
 	print "NOTE: This script will output with WINDOWS EOL markers\n\n";
 	print "Mandatory arguments:\n";
-	print "\t-g	: Path to coordinates file (tab-delimited)\n";
-	print "\t-f	: Path to sequence file (fasta)\n\n";
+	print "\t-g	:Path to coordinates file (tab-delimited)\n";
+	print "\t-f	:Path to sequence file (fasta)\n\n";
 	print "Optional arguments:\n";
 	print "\t-t	: Threshold difference in coordinates to cluster samples into a pop [default=0.001]\n";
 	print "\t-s	: Column in coordinates file with sample IDs [default=1]\n";
 	print "\t-x	: Column in coordinates file with X coordinate [default=2]\n";
 	print "\t-y	: Column in coordinates file with Y coordinate [default=3]\n";
 	print "\t-o	: Output file prefix [Default = out]\n";
-	print "\t-k : Lines to skip in coordinates file [default = 1, assumes header line]\n";
-	print "\t-r : Randomly sample X positions from sequences [Default=0, no sampling]\n";
-	print "\t-b : Toggle on replacement for random sampling- can be used to generate bootstraps\n";
+	print "\t-k	: Lines to skip in coordinates file [default = 1, assumes header line]\n";
+	print "\t-r	: Randomly sample X positions from sequences [Default=0, no sampling]\n";
+	print "\t-b	: Toggle on replacement for random sampling- can be used to generate bootstraps\n";
 	print "\t-h	: Displays this help message\n";
 	
 	print "\nSAMOVA arguments:\n";
