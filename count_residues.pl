@@ -6,6 +6,10 @@
 use strict;
 use warnings;
 
+if ($#ARGV != 1){
+	die "\nUsage: $0 <fasta> <AA>\n\n";
+}
+
 my $file = $ARGV[0];
 my $res = $ARGV[1];
 
