@@ -56,15 +56,22 @@ for my $line (split "\n", $iupac){
 
 #Store population identifiers for each individual (from popmap)
 my %popmap; 
+my %enum; 
 if ($popmap){
-open ( POPMAP, $popmap) || die "Derp: Can't open $popmap: $!";
-	
-	    while (<POPMAP>){
-	    chomp;
-	    my @c = split /\s+/, $_;
-	    $popmap{$c[0]} = $c[1];
-	#print "$c[0] is from pop# $popmap{$c[0]}\n";
-}
+    open ( POPMAP, $popmap) || die "Derp: Can't open $popmap: $!";
+    my $popcount = 0;
+    while (<POPMAP>){
+        chomp;
+        my @c = split /\s+/, $_;
+        if ($enum{$c[1]}){
+            $popmap{$c[0]} = $enum{$c[1]};
+            #print "$c[0] is from pop# $popmap{$c[0]}\n";
+        }else{
+            $enum{$c[1]} = $popcount;
+            $popcount++;
+            $popmap{$c[0]} = $enum{$c[1]};
+        }
+    }
 close POPMAP;
 }
 
