@@ -13,7 +13,7 @@ else
 fi; 
 
 #Format to phylip
-sed -r 's/([0-9]+[A-Z]+[0-9]+) *([A-Z_-]+)/\1\t\2/g' $file | sed 's/ //g' | sed 's/_//g' >> $file.phy;
+sed -r 's/^(\w+)\s+([A-Z_-]+)/\1\t\2/g' $file | sed 's/ //g' | sed 's/_//g' > $file.phy
 #Replace header line
 sed -i -r 's/##([0-9]+).+,.*,([0-9]+).*/\1\t\2/g' $file.phy;
 
