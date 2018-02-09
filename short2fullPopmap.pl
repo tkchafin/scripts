@@ -56,7 +56,7 @@ sub help{
 
   print "\t-i:\tText file with list of sample names\n";
   print "\t-s:\tTab-delimited prefix names\n";
-	print "\t-s:\tNumber of characters used for prefix\n";
+	print "\t-c:\tNumber of characters used for prefix\n";
 	print "\t-o:\tOutput file name\n";
 	print "\t-h:\tBoolean. Calls help menu.\n\n";
 
