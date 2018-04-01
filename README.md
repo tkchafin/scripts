@@ -1,6 +1,7 @@
 # scripts
 Collection of scripts- mostly for manipulating, filtering, and format-conversion of DNA sequence files. Feel free to use. 
 
+### How to use
 Most scripts are written to accept the <-h> argument to display a help menu which should describe the function of the scripts as well as any optional or mandatory inputs. 
 
 Example: 
@@ -39,6 +40,7 @@ Which will display:
 
     Program killed: Help menu called.
 
+### Contents
 Here is a (probably) complete list of the scripts contained here, and generally what they do. 
 ```
 alleles2taghap.pl	: Converts from pyRAD .alleles format to input for fineRadStructure
