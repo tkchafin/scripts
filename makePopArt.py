@@ -137,7 +137,7 @@ def dict2nexus(nex, aln):
 	with open(nex, 'w') as fh:
 		try:
 			slen = getSeqLen(aln)
-			header = "#NEXUS\n\nBEGIN DATA;DIMENSIONS NTAX=" + str(len(aln)) + " NCHAR=" + str(slen) + ";\n"
+			header = "#NEXUS\n\nBEGIN DATA;\nDIMENSIONS NTAX=" + str(len(aln)) + " NCHAR=" + str(slen) + ";\n"
 			header = header + "FORMAT DATATYPE=DNA MISSING=? GAP=-;\n\nMATRIX\n"
 			fh.write(header)
 			for seq in aln:
