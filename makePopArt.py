@@ -7,137 +7,160 @@ import getopt
 
 def main():
 	params = parseArgs()
-	full_seq = False
-	cons_sequences = dict()
-	positions = []
-	
-	#If fasta provided, parse it for consensus sequences and variable positions 
-	if params.fasta:
-		print("Haplotypes will be exported as full sequences")
-		full_seq = True
-		#If fasta provided:
-		if params.fasta:
-			
-			print("Reading FASTA...")
-			#Initialize empty AlignIO object
-			locus = Bio.Align.MultipleSeqAlignment([])
 
-			#Add each sequence to the AlignIO
-			for seq in read_fasta(params.fasta):
-				#Add to AlignIO alignment
-				locus.add_sequence(seq[0], seq[1])
-				#also population our dictionary 
-				cons_sequences[seq[0]] = seq[1]
+	pop_assign = dict()
+	seqs = dict()
 
-			#Generate catalog of variable positions
-			alignment = aln.consensAlign(locus, threshold=1.0, mask=1.0)
-			
-			#Get variable positions from alignment
-			for var in alignment.alnVars:
-				positions.append(var.position) 
-		
+	#parse popmap file for dictionary of sample assignments
+	if params.popmap:
+		print("Parsing popmap file...")
+		pop_assign = parsePopmap(params.popmap)
 	else:
-		print("Haplotypes will be exported as variable columns only.")
-		
-	#parse pairs file 
-	if params.pairs:
-		print("Reading pairs file...")
-		#Open pairs file for reading 
-		if os.path.exists(params.pairs):
-			with open(params.pairs, 'r') as f:
-				try:
-					ofh = open(params.out, "w")
-					this_ind = None
-					assigns = []
-					for line in f:
-						line = line.strip()
-						if not line:
-							continue 
-						#Check if this is an individual header, or hap data
-						if line[0] == "I":
-							if this_ind:
-								#If an ind already assigned, parse it's list
-								best = chooseDiplotype(assigns, params.minp)
-								if best:
-									if full_seq:
-										if cons_sequences[this_ind]:
-											full_dip = getFullDiplotype(cons_sequences[this_ind], best, positions)
-											if full_dip:
-												out1 = ">" + this_ind + "_A" + "\n" + full_dip[0] + "\n"
-												out2 = ">" + this_ind + "_B" + "\n" + full_dip[1] + "\n"
-												ofh.write(out1)
-												ofh.write(out2)
-											else:
-												print("Oh no! Something went wrong with getFullDiplotype()! My creator was too lazy to implement better error check though, so I don't know what went wrong!")
-										else:
-											print("Warning: Individual %s doesn't seem to be in the FASTA file... Skipping it."%this_ind)
-									else:
-										#print best to file 
-										out1 = ">" + this_ind + "_A" + "\n" + best[0] + "\n"
-										out2 = ">" + this_ind + "_B" + "\n" + best[1] + "\n"
-										ofh.write(out1)
-										ofh.write(out2)
-								else:
-									print("Warning: No diplotypes of probability >= %s for sample %s"%(params.minp, this_ind))
-								#Then, empty assigns and this_ind variables 
-								this_ind = None 
-								del assigns[:]
-							else:
-								words = line.split()
-								this_ind = words[1]
-								del assigns[:]
-								continue 
-						else:
-							#This line must contain data 
-							stuff = line.replace(" ","").split(",")
-							assigns.append(stuff)
-					ofh.close()
-				except IOError: 
-					print("Could not read file ",pairs)
-					sys.exit(1)
-				finally:
-					f.close()
-
-	else:
-		print("No input provided")
+		print("ERROR: Popmap file must be provided.")
 		sys.exit(1)
+		
+	#Now, get the alignment from the FASTA file (as another dict)
+	if params.fasta:
+		print('Reading alignment from FASTA...')
+		for f in read_fasta(params.fasta):
+			seqs[f[0]] = f[1]
+	else:
+		if not params.nex:
+			print("ERROR: Fasta or Nexus file must be provided.")
+			sys.exit(1)
+		
+	#Write alignment to NEXUS
+	if params.nex:
+		pass
+	else:
+		print("Writing alignmnt to NEXUS file...")
+		dict2nexus(params.out, seqs)
+		
+	#Get unique from list, enumerate, convert to dict
+	#One of the most horrible lines of Python I've ever written :)
+	pops = dict(enumerate(list(set(list(pop_assign.values())))))
+	with open(params.out, 'a') as fh:
+		try:
+			print("Appending PopArt block to NEXUS file...")
+			#build header lines 
+			header = "BEGIN TRAITS;\n\tDIMENSIONS NTRAITS=" + str(len(pops.keys())) + ";\n\tFormat labels=yes missing=? separator=Comma;" + "\n\tTraitLabels"
+			for p in pops:
+				header = header + " " + str(pops[p])
+			header = header + ";\nMATRIX\n"
+			fh.write(header)
+			
+			#Write poptraits for each sample... 
+			for ind in pop_assign:
+				iline = ind + " "
+				for i in pops:
+					if pops[i] == pop_assign[ind]:
+						iline = iline + "1"
+					else:
+						iline = iline + "0"
+					if int(i) == len(pops.keys())-1:
+						iline = iline + "\n"
+					else:
+						iline = iline + ","
+				fh.write(iline)
+			#write end of block
+			end = ";\nEND;\n"
+			fh.write(end)
+		except IOError: 
+			print("Could not append to file ",nex)
+			sys.exit(1)
+		finally:
+			fh.close()
+	
+		
 
 
 #Read genome as FASTA. FASTA header will be used
 #This is a generator function
 #Doesn't matter if sequences are interleaved or not.
 def read_fasta(fas):
-	if not fileCheck(fas):
-		raise FileNotFoundError("Fatal exception, file %s not found."%fas)
 
-	fh = open(fas)
-	try:
-		with fh as file_object:
-			contig = ""
-			seq = ""
-			for line in file_object:
-				line = line.strip()
-				if not line:
-					continue
-				#print(line)
-				if line[0] == ">": #Found a header line
-					#If we already loaded a contig, yield that contig and
-					#start loading a new one
-					if contig:
-						yield([contig,seq]) #yield
-						contig = "" #reset contig and seq
-						seq = ""
-					split_line = line.split()
-					contig = (split_line[0].replace(">",""))
-				else:
-					seq += line
-		#Iyield last sequence, if it has both a header and sequence
-		if contig and seq:
-			yield([contig,seq])
-	finally:
-		fh.close()
+	if os.path.exists(fas):
+		with open(fas, 'r') as fh:
+			try:
+				contig = ""
+				seq = ""
+				for line in fh:
+					line = line.strip()
+					if not line:
+						continue
+					#print(line)
+					if line[0] == ">": #Found a header line
+						#If we already loaded a contig, yield that contig and
+						#start loading a new one
+						if contig:
+							yield([contig,seq]) #yield
+							contig = "" #reset contig and seq
+							seq = ""
+						split_line = line.split()
+						contig = (split_line[0].replace(">",""))
+					else:
+						seq += line
+				#Iyield last sequence, if it has both a header and sequence
+				if contig and seq:
+					yield([contig,seq])
+			except IOError: 
+				print("Could not read file ",pairs)
+				sys.exit(1)
+			finally:
+				fh.close()
 
+#function reads a tab-delimited popmap file and return dictionary of assignments 
+def parsePopmap(popmap):
 
+	ret = dict()
+	if os.path.exists(popmap):
+		with open(popmap, 'r') as fh:
+			try:
+				contig = ""
+				seq = ""
+				for line in fh:
+					line = line.strip()
+					if not line:
+						continue
+					else:
+						stuff = line.split()
+						ret[stuff[0]] = stuff[1]
+				return(ret)
+			except IOError: 
+				print("Could not read file ",pairs)
+				sys.exit(1)
+			finally:
+				fh.close()
+
+#Function to write an alignment as DICT to NEXUS 
+def dict2nexus(nex, aln):
+	with open(nex, 'w') as fh:
+		try:
+			slen = getSeqLen(aln)
+			header = "#NEXUS\n\nBEGIN DATA;DIMENSIONS NTAX=" + str(len(aln)) + " NCHAR=" + str(slen) + ";\n"
+			header = header + "FORMAT DATATYPE=DNA MISSING=? GAP=-;\n\nMATRIX\n"
+			fh.write(header)
+			for seq in aln:
+				sline = str(seq) + "\t" + aln[seq] + "\n"
+				fh.write(sline)
+			last = ";\nEND;\n"
+			fh.write(last)
+		except IOError: 
+			print("Could not read file ",nex)
+			sys.exit(1)
+		finally:
+			fh.close()
+	
+#Goes through a dict of sequences and get the alignment length 
+def getSeqLen(aln):
+	length = None
+	for key in aln:
+		if not length:
+			length = len(aln[key])
+		else:
+			if length != len(aln[key]):
+				print("getSeqLen: Alignment contains sequences of multiple lengths.")
+	return(length)
 
 
 #Object to parse command-line arguments
@@ -145,8 +168,8 @@ class parseArgs():
 	def __init__(self):
 		#Define options
 		try:
-			options, remainder = getopt.getopt(sys.argv[1:], 'p:f:h', \
-			["popmap=","help","fasta="])
+			options, remainder = getopt.getopt(sys.argv[1:], 'p:f:hn:', \
+			["popmap=","help","fasta=","nex="])
 		except getopt.GetoptError as err:
 			print(err)
 			self.display_help("\nExiting because getopt returned non-zero exit status.")
@@ -155,6 +178,7 @@ class parseArgs():
 		self.popmap=None
 		self.out=None
 		self.fasta=None
+		self.nex=None
 
 		#First pass to see if help menu was called
 		for o, a in options:
@@ -175,6 +199,8 @@ class parseArgs():
 				self.out = arg
 			elif opt in ("f","fasta"):
 				self.fasta = arg
+			elif opt in ("n","nex"):
+				self.nex = arg
 			else:
 				assert False, "Unhandled option %r"%opt
 
@@ -182,12 +208,16 @@ class parseArgs():
 		if not self.popmap:
 			self.display_help("Error: Missing required popmap file (-p,--popmap).")
 		if not self.fasta:
-			self.display_help("Error: Missing required fasta file (-f,--fasta).")
+			if not self.nex:
+				self.display_help("Error: Either FASTA or NEXUS must be provided.")
 
-		if self.out:
-			self.out = self.out + ".nex"
+		if self.nex:
+			self.out = self.nex
 		else:
-			self.out = "out.nex"
+			if self.out:
+				self.out = self.out + ".nex"
+			else:
+				self.out = "out.nex"
 
 
 	def display_help(self, message=None):
@@ -206,6 +236,7 @@ class parseArgs():
 		-f,--fasta	: Path to FASTA-formatted haplotype sequences 
 			--Note for diplotypes: 
 				Paired haplotypes should be formatted as SampleName_A and _B
+		-n,--nex	: Optionally, can provide a NEXUS file to append to.
 		-h,--help	: Displays help menu
 		
 """)
