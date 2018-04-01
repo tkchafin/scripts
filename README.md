@@ -40,7 +40,8 @@ Which will display:
     Program killed: Help menu called.
 
 Here is a (probably) complete list of the scripts contained here, and generally what they do. 
-'''alleles2taghap.pl	: Converts from pyRAD .alleles format to input for fineRadStructure
+''''
+alleles2taghap.pl	: Converts from pyRAD .alleles format to input for fineRadStructure
 averageFastStructure.pl	: Combines multiple replicate runs of FastStructure
 batchBUCKY.pl	: Pipeline for running BUCKy. Old and probably broken. 
 collapseHaps.pl	: Collapse sequences to redundant consensus sequences
@@ -74,4 +75,5 @@ subsetPhy.py	: Quickly written and shitty script to subset taxa from a PHYLIP al
 subsetSnps.py	: Given a list of desired columns, subsets SNPs from a STRUCTURE file 
 sumls.sh	: A bash alias for doing something with ls 
 summaryGFF.pl	: Something old and incomplete.
-trimFastq.pl	: Perl script for end-trimming FASTQ reads'''
+trimFastq.pl	: Perl script for end-trimming FASTQ reads
+''''
