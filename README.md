@@ -40,7 +40,7 @@ Which will display:
     Program killed: Help menu called.
 
 Here is a (probably) complete list of the scripts contained here, and generally what they do. 
-''''
+```
 alleles2taghap.pl	: Converts from pyRAD .alleles format to input for fineRadStructure
 averageFastStructure.pl	: Combines multiple replicate runs of FastStructure
 batchBUCKY.pl	: Pipeline for running BUCKy. Old and probably broken. 
@@ -76,4 +76,4 @@ subsetSnps.py	: Given a list of desired columns, subsets SNPs from a STRUCTURE f
 sumls.sh	: A bash alias for doing something with ls 
 summaryGFF.pl	: Something old and incomplete.
 trimFastq.pl	: Perl script for end-trimming FASTQ reads
-''''
+```
