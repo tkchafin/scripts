@@ -31,9 +31,15 @@ def main():
 		
 	#Write alignment to NEXUS
 	if params.nex:
-		pass
+		#Get sample names, check if they're all in the popmap 
+		seqnames = getSamplesNexus(params.nex)
+		print("Checking that samples in NEXUS match POPMAP...")
+		validatePopmap(seqnames, pop_assign)
 	else:
-		print("Writing alignmnt to NEXUS file...")
+		#Check fasta samples are in popmap
+		print("Checking that FASTA samples are in POPMAP...")
+		validatePopmap(seqs.keys(), pop_assign)
+		print("Writing alignment to NEXUS file...")
 		dict2nexus(params.out, seqs)
 		
 	#Get unique from list, enumerate, convert to dict
@@ -104,10 +110,50 @@ def read_fasta(fas):
 				if contig and seq:
 					yield([contig,seq])
 			except IOError: 
-				print("Could not read file ",pairs)
+				print("Could not read file ",fas)
 				sys.exit(1)
 			finally:
 				fh.close()
+
+#Function to read NEXUS and get list of sample names 
+def getSamplesNexus(nex):
+	if os.path.exists(nex):
+		with open(nex, 'r') as fh:
+			try:
+				ret = list()
+				found = False
+				for line in fh:
+					line = line.strip()
+					if not line:
+						continue
+					#print(line)
+					if line[0:6].upper() == "MATRIX": #Found a beginning of samples
+						found = True
+						continue
+						
+					if found:
+						if line[0] == ";":
+							break
+						stuff = line.split()
+						ret.append(stuff[0])
+					else:
+						continue
+				return(ret)
+
+			except IOError: 
+				print("Could not read file ",nex)
+				sys.exit(1)
+			finally:
+				fh.close()
+
+#Function to check that list of sample names and popmap entries match
+def validatePopmap(samples, popmap):
+	for samp in samples:
+		if not popmap[samp]:
+			print("Warning: Sample %s not found in popmap!"%samp)
+	for key in popmap:
+		if key not in samples:
+			print("Warning: Sample %s found in popmap has no data!"%key)
 
 #function reads a tab-delimited popmap file and return dictionary of assignments 
 def parsePopmap(popmap):
