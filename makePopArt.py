@@ -114,6 +114,8 @@ def read_fasta(fas):
 				sys.exit(1)
 			finally:
 				fh.close()
+	else:
+		raise FileNotFoundError("File %s not found!"%fas)
 
 #Function to read NEXUS and get list of sample names 
 def getSamplesNexus(nex):
@@ -145,11 +147,15 @@ def getSamplesNexus(nex):
 				sys.exit(1)
 			finally:
 				fh.close()
+	else:
+		raise FileNotFoundError("File %s not found!"%nex)
 
 #Function to check that list of sample names and popmap entries match
 def validatePopmap(samples, popmap):
+	print(samples)
+	print(popmap)
 	for samp in samples:
-		if not popmap[samp]:
+		if samp in popmap:
 			print("Warning: Sample %s not found in popmap!"%samp)
 	for key in popmap:
 		if key not in samples:
@@ -177,6 +183,8 @@ def parsePopmap(popmap):
 				sys.exit(1)
 			finally:
 				fh.close()
+	else:
+		raise FileNotFoundError("File %s not found!"%popmap)
 
 #Function to write an alignment as DICT to NEXUS 
 def dict2nexus(nex, aln):
@@ -214,8 +222,8 @@ class parseArgs():
 	def __init__(self):
 		#Define options
 		try:
-			options, remainder = getopt.getopt(sys.argv[1:], 'p:f:hn:', \
-			["popmap=","help","fasta=","nex="])
+			options, remainder = getopt.getopt(sys.argv[1:], 'p:f:hn:o:', \
+			["popmap=","help","fasta=","nex=","out="])
 		except getopt.GetoptError as err:
 			print(err)
 			self.display_help("\nExiting because getopt returned non-zero exit status.")
