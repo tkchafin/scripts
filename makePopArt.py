@@ -34,11 +34,9 @@ def main():
 		#Get sample names, check if they're all in the popmap
 		seqnames = getSamplesNexus(params.nex)
 		print("Checking that samples in NEXUS match POPMAP...")
-		validatePopmap(seqnames, pop_assign)
+		#validatePopmap(seqnames, pop_assign)
 	else:
 		#Check fasta samples are in popmap
-		print("Checking that FASTA samples are in POPMAP...")
-		validatePopmap(seqs.keys(), pop_assign)
 		print("Writing alignment to NEXUS file...")
 		dict2nexus(params.out, seqs)
 
