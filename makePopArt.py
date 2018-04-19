@@ -18,7 +18,7 @@ def main():
 	else:
 		print("ERROR: Popmap file must be provided.")
 		sys.exit(1)
-		
+
 	#Now, get the alignment from the FASTA file (as another dict)
 	if params.fasta:
 		print('Reading alignment from FASTA...')
@@ -28,10 +28,10 @@ def main():
 		if not params.nex:
 			print("ERROR: Fasta or Nexus file must be provided.")
 			sys.exit(1)
-		
+
 	#Write alignment to NEXUS
 	if params.nex:
-		#Get sample names, check if they're all in the popmap 
+		#Get sample names, check if they're all in the popmap
 		seqnames = getSamplesNexus(params.nex)
 		print("Checking that samples in NEXUS match POPMAP...")
 		validatePopmap(seqnames, pop_assign)
@@ -41,21 +41,21 @@ def main():
 		validatePopmap(seqs.keys(), pop_assign)
 		print("Writing alignment to NEXUS file...")
 		dict2nexus(params.out, seqs)
-		
+
 	#Get unique from list, enumerate, convert to dict
 	#One of the most horrible lines of Python I've ever written :)
 	pops = dict(enumerate(list(set(list(pop_assign.values())))))
 	with open(params.out, 'a') as fh:
 		try:
 			print("Appending PopArt block to NEXUS file...")
-			#build header lines 
+			#build header lines
 			header = "BEGIN TRAITS;\n\tDIMENSIONS NTRAITS=" + str(len(pops.keys())) + ";\n\tFormat labels=yes missing=? separator=Comma;" + "\n\tTraitLabels"
 			for p in pops:
 				header = header + " " + str(pops[p])
 			header = header + ";\nMATRIX\n"
 			fh.write(header)
-			
-			#Write poptraits for each sample... 
+
+			#Write poptraits for each sample...
 			for ind in pop_assign:
 				iline = ind + " "
 				for i in pops:
@@ -71,13 +71,13 @@ def main():
 			#write end of block
 			end = ";\nEND;\n"
 			fh.write(end)
-		except IOError: 
-			print("Could not append to file ",nex)
+		except IOError:
+			print("Could not append to file ",params.out)
 			sys.exit(1)
 		finally:
 			fh.close()
-	
-		
+
+
 
 
 #Read genome as FASTA. FASTA header will be used
@@ -109,7 +109,7 @@ def read_fasta(fas):
 				#Iyield last sequence, if it has both a header and sequence
 				if contig and seq:
 					yield([contig,seq])
-			except IOError: 
+			except IOError:
 				print("Could not read file ",fas)
 				sys.exit(1)
 			finally:
@@ -117,7 +117,7 @@ def read_fasta(fas):
 	else:
 		raise FileNotFoundError("File %s not found!"%fas)
 
-#Function to read NEXUS and get list of sample names 
+#Function to read NEXUS and get list of sample names
 def getSamplesNexus(nex):
 	if os.path.exists(nex):
 		with open(nex, 'r') as fh:
@@ -132,7 +132,7 @@ def getSamplesNexus(nex):
 					if line[0:6].upper() == "MATRIX": #Found a beginning of samples
 						found = True
 						continue
-						
+
 					if found:
 						if line[0] == ";":
 							break
@@ -142,7 +142,7 @@ def getSamplesNexus(nex):
 						continue
 				return(ret)
 
-			except IOError: 
+			except IOError:
 				print("Could not read file ",nex)
 				sys.exit(1)
 			finally:
@@ -161,7 +161,7 @@ def validatePopmap(samples, popmap):
 		if key not in samples:
 			print("Warning: Sample %s found in popmap has no data!"%key)
 
-#function reads a tab-delimited popmap file and return dictionary of assignments 
+#function reads a tab-delimited popmap file and return dictionary of assignments
 def parsePopmap(popmap):
 
 	ret = dict()
@@ -178,7 +178,7 @@ def parsePopmap(popmap):
 						stuff = line.split()
 						ret[stuff[0]] = stuff[1]
 				return(ret)
-			except IOError: 
+			except IOError:
 				print("Could not read file ",pairs)
 				sys.exit(1)
 			finally:
@@ -186,7 +186,7 @@ def parsePopmap(popmap):
 	else:
 		raise FileNotFoundError("File %s not found!"%popmap)
 
-#Function to write an alignment as DICT to NEXUS 
+#Function to write an alignment as DICT to NEXUS
 def dict2nexus(nex, aln):
 	with open(nex, 'w') as fh:
 		try:
@@ -199,13 +199,13 @@ def dict2nexus(nex, aln):
 				fh.write(sline)
 			last = ";\nEND;\n"
 			fh.write(last)
-		except IOError: 
+		except IOError:
 			print("Could not read file ",nex)
 			sys.exit(1)
 		finally:
 			fh.close()
-	
-#Goes through a dict of sequences and get the alignment length 
+
+#Goes through a dict of sequences and get the alignment length
 def getSeqLen(aln):
 	length = None
 	for key in aln:
@@ -287,12 +287,12 @@ class parseArgs():
 	Arguments:
 		-p,--popmap	: Path to tab-delimited population map
 		-o,--out	: Prefix for output file <default = ./out>
-		-f,--fasta	: Path to FASTA-formatted haplotype sequences 
-			--Note for diplotypes: 
+		-f,--fasta	: Path to FASTA-formatted haplotype sequences
+			--Note for diplotypes:
 				Paired haplotypes should be formatted as SampleName_A and _B
 		-n,--nex	: Optionally, can provide a NEXUS file to append to.
 		-h,--help	: Displays help menu
-		
+
 """)
 		print()
 		sys.exit()
