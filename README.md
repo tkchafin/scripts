@@ -61,6 +61,7 @@ makeSAMOVA.pl		: Makes inputs for SAMOVA given FASTA and coordinates, with autom
 nremover.pl		: My version of Steve Mussmann's nremover script, for filtering DNA alignments
 parallelMB.pl		: For running batches of MrBayes on a cluster, in parallel per locus 
 phylip2bgc.pl		: Converts PHYLIP alignment to inputs for BGC (inference of Bayesian Genomic CLines)
+phylip2biNumNex.py	: Converts PHYLIP to bi-allelic numerically coded NEXUS for PhyloNet's MLE_BiMarkers
 phylip2introgress.pl	: Converts PHYLIP to inputs for R package INTROGRESS (introgession analyses)
 phylip2nexus.pl		: Converts PHYLIP to NEXUS 
 phylip2structure.pl	: Converts PHYLIP alignment of SNPs to inputs for STRUCTURE
