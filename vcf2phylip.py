@@ -34,7 +34,12 @@ def main():
 		#Print dict to phylip file
 		with open(params.out, 'w') as fh:
 			try:
+				header = getPhylipHeader(data) + "\n"
+				fh.write(header)
 
+				for sample in data:
+					line = str(sample) + "\t" + "".join(data[sample]) + "\n"
+					fh.write(line)
 			except IOError:
 				print("Could not write to file ",params.out)
 				sys.exit(1)
@@ -45,6 +50,23 @@ def main():
 		print("Error: No VCF file provided")
 		sys.exit(1)
 
+#Returns header for Phylip file from a dictionary of samples w/ data
+def getPhylipHeader(d):
+	numSamp = 0
+	numLoci = None
+	for sample in d:
+		numSamp = numSamp + 1
+		if not numLoci:
+			numLoci = len(d[sample])
+		else:
+			if numLoci != len(d[sample]):
+				print("getPhylipHeader: Warning: Sequences of unequal length.")
+	header = str(numSamp) + " " + str(numLoci)
+	if numLoci == 0 or not numLoci:
+		print("getPhylipHeader: Warning: No loci in dictionary.")
+	if numSamp == 0:
+		print("getPhylipHeader: Warning: No samples in dictionary.")
+	return(header)
 
 #Read VCF variant calls
 #Generator function, yields each locus
