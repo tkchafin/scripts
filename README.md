@@ -46,6 +46,7 @@ Here is a (probably) complete list of the scripts contained here, and generally 
 alleles2taghap.pl	: Converts from pyRAD .alleles format to input for fineRadStructure
 averageFastStructure.pl	: Combines multiple replicate runs of FastStructure
 batchBUCKY.pl		: Pipeline for running BUCKy. Old and probably broken. 
+collapse_baits.py	: For filtering baits by SNP count from BaitsTools output
 collapseHaps.pl		: Collapse sequences to redundant consensus sequences
 compare2seqs.pl		: This was a learning exercise. Just compares sequences. 
 condenseAlleles.pl	: Creates a consensus of alleles (input as FASTA) per individual
@@ -79,4 +80,5 @@ subsetSnps.py		: Given a list of desired columns, subsets SNPs from a STRUCTURE 
 sumls.sh		: A bash alias for doing something with ls 
 summaryGFF.pl		: Something old and incomplete.
 trimFastq.pl		: Perl script for end-trimming FASTQ reads
+vcf2phylip.py		: VCF to PHYLIP
 ```
