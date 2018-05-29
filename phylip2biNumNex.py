@@ -5,6 +5,7 @@ import sys
 import os
 import getopt
 import operator
+import random
 
 def main():
 	params = parseArgs()
@@ -41,7 +42,10 @@ def main():
 		for i, col in enumerate(columns):
 			#print(col)
 			#print(nucs2numeric(col))
-			formatted[i] = nucs2numeric(col)
+			if params.nohet:
+				formatted[i] = nucs2numericNohet(col)
+			else:
+				formatted[i] = nucs2numeric(col)
 			#sys.exit()
 
 		final_data = dict()
@@ -89,6 +93,45 @@ def nucs2numeric(nucs):
 				ret.append("1")
 			elif nuc == het:
 				ret.append("2")
+			elif nuc == "-":
+				ret.append("-")
+			else:
+				ret.append("?")
+
+		return(ret)
+	else:
+		print("Warning: Data is not biallelic:",nucs)
+		return(None)
+
+#Function takes biallelic list of nucleotides and converts to numeric
+#0 = major allele
+#1 = minor allele
+#2: Randomly samples heterozygous sites as 0 or 1
+def nucs2numericNohet(nucs):
+	if isBiallelic(nucs):
+		#print(nucs)
+		ret = list()
+		counts = {"A":0, "G":0, "C":0, "T":0}
+		#find major allele
+		for nuc in nucs:
+			if nuc not in ("-", "N"):
+				for exp in get_iupac_caseless(nuc):
+					counts[exp] += 1
+		#sort dict, to list of tuples (b/c dicts are orderless, can't keep as dict)
+		sorted_x = sorted(counts.items(), key=operator.itemgetter(1), reverse=True)
+		majA = sorted_x[0][0]
+		minA = sorted_x[1][0]
+		het = reverse_iupac(''.join(sorted(set([majA, minA])))) #get het code
+		#print(majA, minA, het)
+
+		for nuc in nucs:
+			nuc = nuc.upper()
+			if nuc == majA:
+				ret.append("0")
+			elif nuc == minA:
+				ret.append("1")
+			elif nuc == het:
+				ret.append(random.randint(0,1))
 			elif nuc == "-":
 				ret.append("-")
 			else:
@@ -196,13 +239,13 @@ def dict2nexus(nex, aln):
 	with open(nex, 'w') as fh:
 		try:
 			slen = getSeqLen(aln)
-			header = "#NEXUS\n\nBEGIN DATA;\nDIMENSIONS NTAX=" + str(len(aln)) + " NCHAR=" + str(slen) + ";\n"
-			header = header + "FORMAT DATATYPE=DNA SYMBOLS=\"012\" MISSING=? GAP=-;\n\nMATRIX\n"
+			header = "#NEXUS\n\nBegin data;\nDimensions ntax=" + str(len(aln)) + " nchar=" + str(slen) + ";\n"
+			header = header + "Format datatype=dna symbols=\"012\" missing=? gap=-;\nMatrix\n\n"
 			fh.write(header)
 			for seq in aln:
-				sline = str(seq) + "\t" + aln[seq] + "\n"
+				sline = str(seq) + " " + aln[seq] + "\n"
 				fh.write(sline)
-			last = ";\nEND;\n"
+			last = ";\nEnd;\n"
 			fh.write(last)
 		except IOError:
 			print("Could not read file ",nex)
@@ -227,8 +270,8 @@ class parseArgs():
 	def __init__(self):
 		#Define options
 		try:
-			options, remainder = getopt.getopt(sys.argv[1:], 'p:ho:', \
-			["phylip=","phy=","out="])
+			options, remainder = getopt.getopt(sys.argv[1:], 'p:ho:n', \
+			["phylip=","phy=","out=","nohet"])
 		except getopt.GetoptError as err:
 			print(err)
 			self.display_help("\nExiting because getopt returned non-zero exit status.")
@@ -236,6 +279,7 @@ class parseArgs():
 		#Input params
 		self.phylip=None
 		self.out="out.nex"
+		self.nohet=False
 
 		#First pass to see if help menu was called
 		for o, a in options:
@@ -254,6 +298,8 @@ class parseArgs():
 				pass
 			elif opt in ('o','out'):
 				self.out = arg
+			elif opt in ('n','nohet'):
+				self.nohet=True
 			else:
 				assert False, "Unhandled option %r"%opt
 
@@ -274,6 +320,7 @@ class parseArgs():
 	Arguments:
 		-p,--popmap	: Path to tab-delimited population map
 		-o,--out	: Output file name <default = out.nex>
+		-n,--nohet	: Randomly sample one allele from all heterozygous sites
 		-h,--help	: Displays help menu
 
 """)
