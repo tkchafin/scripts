@@ -41,7 +41,7 @@ Which will display:
     Program killed: Help menu called.
 
 ### Contents
-Here is a (probably) complete list of the scripts contained here, and generally what they do. 
+Here is a (probably) complete list of the scripts contained here, and generally what they do. All scripts written in Python require Python3. 
 ```
 alleles2taghap.pl	: Converts from pyRAD .alleles format to input for fineRadStructure
 averageFastStructure.pl	: Combines multiple replicate runs of FastStructure
