@@ -16,7 +16,7 @@ if( scalar( @ARGV ) == 0 ){
 
 #Parse arguments
 my %opts;
-getopts( 'p:i:1:2:a:o:h', \%opts );
+getopts( 'p:i:1:2:a:o:hn:N:gPx', \%opts );
 
 # kill if help option is true
 if( $opts{h} ){
@@ -25,16 +25,16 @@ if( $opts{h} ){
 }
 
 #get options
-my ($map, $phy, $p1, $p2, $a, $out, $threshold, $globalThresh, $gapFalse) = &parseArgs(\%opts);
+my ($map, $phy, $p1, $p2, $ad, $out, $threshold, $globalThresh, $gapFalse, $phyNew, $onlyPhy) = &parseArgs(\%opts);
 
 #Extract pops into an array
 my @pop1 = split(/\+/,$p1);
 my @pop2 = split(/\+/,$p2);
-my @popA = split(/\+/,$a);
+my @popA = split(/\+/,$ad);
 
 $p1 = join(', ',@pop1);
 $p2 = join(', ',@pop2);
-$a = join(', ', @popA);
+$ad = join(', ', @popA);
 
 # hash of loci with too much missing data
 my %blacklist;
@@ -50,7 +50,7 @@ print "\nPopmap file is: $map\n";
 print "Phylip file is: $phy\n";
 print "Population 1 is: $p1\n";
 print "Population 2 is: $p2\n";
-print "Admixed population is: $a\n";
+print "Admixed population is: $ad\n";
 print "Total taxa in phylip file: $ntax\n";
 print "Total characters in phylip data matrix: $nchar\n\n";
 
@@ -81,7 +81,7 @@ if ($num1< 1){
 }elsif ($num2 < 1){
   die "Error: No individuals for pop ID <$p2> were found!\n\n";
 }elsif ($num3 < 1){
-  die "Error: No individuals for pop ID <$a> were found!\n\n";
+  die "Error: No individuals for pop ID <$ad> were found!\n\n";
 }else{
   print "Found <$num1> individuals in population 1\n";
   print "Found <$num2> individuals in population 2\n";
@@ -89,111 +89,169 @@ if ($num1< 1){
 }
 
 #Open filstreams
-open(ADMIX, "> admix.csv");
-open(LOCI, "> loci.txt");
-open(P1DATA, "> p1data.csv");
-open(P2DATA, "> p2data.csv");
+if ($onlyPhy != 1){
+	open(ADMIX, "> admix.csv");
+	open(LOCI, "> loci.txt");
+	open(P1DATA, "> p1data.csv");
+	open(P2DATA, "> p2data.csv");
 
-#Print loci.txt file
-print LOCI "locus,type\n";
-for my $nloci (1 .. $nchar){
-	if(!exists $blacklist{$nloci}){
-		print LOCI "loci$nloci,C\n";
+	#Print loci.txt file
+	print LOCI "locus,type\n";
+	for my $nloci (1 .. $nchar){
+		if(!exists $blacklist{$nloci}){
+			print LOCI "loci$nloci,C\n";
+		}
 	}
-}
 
-print "Done writing LOCI file <loci.txt>\n";
-close LOCI;
+	print "Done writing LOCI file <loci.txt>\n";
+	close LOCI;
 
-#Print header lines of admix file
-my @line1;
-my @line2;
-foreach my $adInd (keys %{$popaRef}){
-	push( @line1, "pop1");
-	push( @line2, $adInd);
-}
-
-my $line1str = join(",", @line1);
-my $line2str = join(",", @line2);
-
-print ADMIX $line1str, "\n";
-print ADMIX $line2str, "\n";
-
-#format and print files for introgress
-for (my $loc = 0; $loc < $nchar; $loc++){
-	if(!exists $blacklist{$loc+1}){
-		#write p1 file
-		my @p1line;
-		foreach my $ind (keys %{$pop1Ref}){
-			my $nuc = ${$pop1Ref->{$ind}}->[$loc];
-			$nuc =~ s/A/A\/A/g;
-			$nuc =~ s/T/T\/T/g;
-			$nuc =~ s/G/G\/G/g;
-			$nuc =~ s/C/C\/C/g;
-			$nuc =~ s/W/A\/T/g;
-			$nuc =~ s/R/A\/G/g;
-			$nuc =~ s/M/A\/C/g;
-			$nuc =~ s/K/G\/T/g;
-			$nuc =~ s/Y/T\/C/g;
-			$nuc =~ s/S/C\/G/g;
-			$nuc =~ s/N/NA\/NA/g;
-			$nuc =~ s/-/NA\/NA/g;
-			push(@p1line, $nuc);
-		}
-		my $p1linestr = join(",", @p1line);
-		print P1DATA $p1linestr, "\n";
-
-		#Write p2 file
-		my @p2line;
-		foreach my $ind (keys %{$pop2Ref}){
-			my $nuc = ${$pop2Ref->{$ind}}->[$loc];
-			$nuc =~ s/A/A\/A/g;
-			$nuc =~ s/T/T\/T/g;
-			$nuc =~ s/G/G\/G/g;
-			$nuc =~ s/C/C\/C/g;
-			$nuc =~ s/W/A\/T/g;
-			$nuc =~ s/R/A\/G/g;
-			$nuc =~ s/M/A\/C/g;
-			$nuc =~ s/K/G\/T/g;
-			$nuc =~ s/Y/T\/C/g;
-			$nuc =~ s/S/C\/G/g;
-			$nuc =~ s/N/NA\/NA/g;
-			$nuc =~ s/-/NA\/NA/g;
-			push(@p2line, $nuc);
-		}
-		my $p2linestr = join(",", @p2line);
-		print P2DATA $p2linestr, "\n";
-
-		#Populate admix file
-		my @admixline;
-		foreach my $ind (keys %{$popaRef}){
-			my $nuc = ${$popaRef->{$ind}}->[$loc];
-			$nuc =~ s/A/A\/A/g;
-			$nuc =~ s/T/T\/T/g;
-			$nuc =~ s/G/G\/G/g;
-			$nuc =~ s/C/C\/C/g;
-			$nuc =~ s/W/A\/T/g;
-			$nuc =~ s/R/A\/G/g;
-			$nuc =~ s/M/A\/C/g;
-			$nuc =~ s/K/G\/T/g;
-			$nuc =~ s/Y/T\/C/g;
-			$nuc =~ s/S/C\/G/g;
-			$nuc =~ s/N/NA\/NA/g;
-			$nuc =~ s/-/NA\/NA/g;
-			push( @admixline, $nuc);
-		}
-		my $admixlinestr = join(",", @admixline);
-		print ADMIX $admixlinestr, "\n";
+	#Print header lines of admix file
+	my @line1;
+	my @line2;
+	foreach my $adInd (keys %{$popaRef}){
+		push( @line1, "pop1");
+		push( @line2, $adInd);
 	}
+
+	my $line1str = join(",", @line1);
+	my $line2str = join(",", @line2);
+
+	print ADMIX $line1str, "\n";
+	print ADMIX $line2str, "\n";
+
+	#format and print files for introgress
+	for (my $loc = 0; $loc < $nchar; $loc++){
+		if(!exists $blacklist{$loc+1}){
+			#write p1 file
+			my @p1line;
+			foreach my $ind (keys %{$pop1Ref}){
+				my $nuc = ${$pop1Ref->{$ind}}->[$loc];
+				$nuc =~ s/A/A\/A/g;
+				$nuc =~ s/T/T\/T/g;
+				$nuc =~ s/G/G\/G/g;
+				$nuc =~ s/C/C\/C/g;
+				$nuc =~ s/W/A\/T/g;
+				$nuc =~ s/R/A\/G/g;
+				$nuc =~ s/M/A\/C/g;
+				$nuc =~ s/K/G\/T/g;
+				$nuc =~ s/Y/T\/C/g;
+				$nuc =~ s/S/C\/G/g;
+				$nuc =~ s/N/NA\/NA/g;
+				$nuc =~ s/-/NA\/NA/g;
+				push(@p1line, $nuc);
+			}
+			my $p1linestr = join(",", @p1line);
+			print P1DATA $p1linestr, "\n";
+
+			#Write p2 file
+			my @p2line;
+			foreach my $ind (keys %{$pop2Ref}){
+				my $nuc = ${$pop2Ref->{$ind}}->[$loc];
+				$nuc =~ s/A/A\/A/g;
+				$nuc =~ s/T/T\/T/g;
+				$nuc =~ s/G/G\/G/g;
+				$nuc =~ s/C/C\/C/g;
+				$nuc =~ s/W/A\/T/g;
+				$nuc =~ s/R/A\/G/g;
+				$nuc =~ s/M/A\/C/g;
+				$nuc =~ s/K/G\/T/g;
+				$nuc =~ s/Y/T\/C/g;
+				$nuc =~ s/S/C\/G/g;
+				$nuc =~ s/N/NA\/NA/g;
+				$nuc =~ s/-/NA\/NA/g;
+				push(@p2line, $nuc);
+			}
+			my $p2linestr = join(",", @p2line);
+			print P2DATA $p2linestr, "\n";
+
+			#Populate admix file
+			my @admixline;
+			foreach my $ind (keys %{$popaRef}){
+				my $nuc = ${$popaRef->{$ind}}->[$loc];
+				$nuc =~ s/A/A\/A/g;
+				$nuc =~ s/T/T\/T/g;
+				$nuc =~ s/G/G\/G/g;
+				$nuc =~ s/C/C\/C/g;
+				$nuc =~ s/W/A\/T/g;
+				$nuc =~ s/R/A\/G/g;
+				$nuc =~ s/M/A\/C/g;
+				$nuc =~ s/K/G\/T/g;
+				$nuc =~ s/Y/T\/C/g;
+				$nuc =~ s/S/C\/G/g;
+				$nuc =~ s/N/NA\/NA/g;
+				$nuc =~ s/-/NA\/NA/g;
+				push( @admixline, $nuc);
+			}
+			my $admixlinestr = join(",", @admixline);
+			print ADMIX $admixlinestr, "\n";
+		}
+	}
+
+	print "Done writing P1DATA file <p1data.csv>\n";
+	close P1DATA;
+	print "Done writing P2DATA file <p2data.csv>\n";
+	close P2DATA;
+	print "Done writing ADMIX file <admix.csv>\n\n";
+	close ADMIX;
 }
 
-print "Done writing P1DATA file <p1data.csv>\n";
-close P1DATA;
-print "Done writing P2DATA file <p2data.csv>\n";
-close P2DATA;
-print "Done writing ADMIX file <admix.csv>\n\n";
-close ADMIX;
+if ($phyNew or $onlyPhy){
+	print("Writing new PHYLIP file <out.phy>\n");
+	open (PHY, "> out.phy");
+	my $locnum = 0;
+	my $indnum = 0;
+	for (my $loc = 0; $loc < $nchar; $loc++){
+		if(!exists $blacklist{$loc+1}){
+			$locnum++;
+		}
+	}
+	foreach my $ind (keys %{$pop1Ref}){
+		$indnum++;
+	}
+	foreach my $ind (keys %{$pop2Ref}){
+		$indnum++;
+	}
+	foreach my $ind (keys %{$popaRef}){
+		$indnum++;
+	}
+	print PHY $indnum, " ", $locnum, "\n";
 
+	#print data for P1
+	foreach my $ind (sort keys %{$pop1Ref}){
+		#print $ind, "\n";
+		print PHY $ind, "\t";
+		for (my $l = 0; $l < $nchar; $l++){
+			if(!exists $blacklist{$l+1}){
+				print PHY ${$pop1Ref->{$ind}}->[$l];
+			}
+		}
+		print PHY "\n";
+	}
+	#exit;
+	foreach my $ind (sort keys %{$pop2Ref}){
+		print PHY $ind, "\t";
+		for (my $loc = 0; $loc < $nchar; $loc++){
+			#print $loc, " ";
+			if(!exists $blacklist{$loc+1}){
+				print PHY ${$pop2Ref->{$ind}}->[$loc];
+			}
+		}
+		print PHY "\n";
+	}
+	foreach my $ind (sort keys %{$popaRef}){
+		print PHY $ind, "\t";
+		for (my $loc = 0; $loc < $nchar; $loc++){
+			if(!exists $blacklist{$loc+1}){
+				print PHY ${$popaRef->{$ind}}->[$loc];
+			}
+		}
+		print PHY "\n";
+	}
+	close PHY;
+}
+
+exit 0;
 
  ########################### SUBROUTINES ###############################
 
@@ -213,7 +271,8 @@ close ADMIX;
 	print "\t-n	: Proportion missing data allowed per population per SNP (default=0.5)\n";
 	print "\t-N	: Proportion of globally missing data allowed per SNP (default=0.5)\n";
 	print "\t-g	: Toggle on to TURN OFF default behavior of treating gaps as missing data\n";
-	print "\t-o	: Output file name. [Default = out.phy]\n";
+	print "\t-P	: Toggle on to output a new phylip file with the filtered data. [default=off]\n";
+	print "\t-x	: Toggle on to ONLY print a new phylip file (e.g. no INTROGRESS files)";
 	print "\t-h	: Displays this help message\n";
 	print "\n\n";
 }
@@ -229,14 +288,18 @@ sub parseArgs{
   my $phy = $opts{i} or die "\nPhylip file not specified.\n\n";
   my $p1  = $opts{1} or die "\nPopulation 1 not specified.\n\n";
   my $p2  = $opts{2} or die "\nPopulation 2 not specified.\n\n";
-  my $a  = $opts{a} or die "\nNo admixed population specified.\n\n";
+  my $ad  = $opts{a} or die "\nNo admixed population specified.\n\n";
 	my $threshold  = $opts{n} || 0.5;
 	my $gapFalse = 0;
+	my $phyNew = 0;
 	$opts{g} and $gapFalse = 1;
+	$opts{P} and $phyNew = 1;
 	my $globalThresh = $opts{N} || 0.5;
+	my $onlyPhy = 0;
+	$opts{x} and $onlyPhy = 1;
   my $out = $opts{o} || "out.phy";
   #return
-  return ($map, $phy, $p1, $p2, $a, $out, $threshold, $globalThresh, $gapFalse);
+  return ($map, $phy, $p1, $p2, $ad, $out, $threshold, $globalThresh, $gapFalse, $phyNew, $onlyPhy);
 }
 
 #parse popmap file
