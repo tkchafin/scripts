@@ -15,7 +15,7 @@ if( scalar( @ARGV ) == 0 ){
 
 #Parse arguments
 my %opts;
-getopts( 'p:i:1:2:a:o:hn:N:gPx', \%opts );
+getopts( 'p:i:1:2:a:o:hn:N:gPxr:', \%opts );
 
 # kill if help option is true
 if( $opts{h} ){
@@ -24,7 +24,7 @@ if( $opts{h} ){
 }
 
 #get options
-my ($map, $phy, $p1, $p2, $ad, $out, $threshold, $globalThresh, $gapFalse, $phyNew, $onlyPhy) = &parseArgs(\%opts);
+my ($map, $phy, $p1, $p2, $ad, $out, $threshold, $globalThresh, $gapFalse, $phyNew, $onlyPhy, $rand) = &parseArgs(\%opts);
 
 #Extract pops into an array
 my @pop1 = split(/\+/,$p1);
@@ -68,6 +68,16 @@ if ($gapFalse == 1){
 my $nFail = (keys %blacklist);
 
 print($nFail ," loci had greater than ",$threshold, " missing data. Removing them.\n");
+
+
+#Random sample from remaining loci
+if ($rand){
+	print "Randomly sampling ",$rand," SNPs...\n";
+	&randomSample($nchar, \%blacklist, $rand); #Function adds unsampled loci to the blacklist
+	my $rem = scalar keys %blacklist;
+	print "After random sampling and filtering, a total of ", $rem, " SNPs will be removed!\n";
+}
+
 #print Dumper(\%blacklist);
 
 #Check if pops contain data
@@ -275,6 +285,7 @@ exit 0;
 	print "\t-N	: Proportion of globally missing data allowed per SNP (default=0.5)\n";
 	print "\t-g	: Toggle on to TURN OFF default behavior of treating gaps as missing data\n";
 	print "\t-P	: Toggle on to output a new phylip file with the filtered data. [default=off]\n";
+	print "\t-r	: Randomly sample x number of SNPs post-filtering [default=off]";
 	print "\t-x	: Toggle on to ONLY print a new phylip file (e.g. no NewHybrids file)";
 	print "\t-h	: Displays this help message\n";
 	print "\n\n";
@@ -299,11 +310,80 @@ sub parseArgs{
 	$opts{P} and $phyNew = 1;
 	my $globalThresh = $opts{N} || 0.5;
 	my $onlyPhy = 0;
+	my $rand = $opts{r} || 0;
 	$opts{x} and $onlyPhy = 1;
   my $out = $opts{o} || "out.phy";
   #return
-  return ($map, $phy, $p1, $p2, $ad, $out, $threshold, $globalThresh, $gapFalse, $phyNew, $onlyPhy);
+  return ($map, $phy, $p1, $p2, $ad, $out, $threshold, $globalThresh, $gapFalse, $phyNew, $onlyPhy, $rand);
 }
+
+#################################################################################
+#subroutine to randomly sample SNPs to keep in alignment
+sub randomSample{
+
+ my( $nchar, $blacklistref, $num ) = @_;
+
+ my $total = $nchar - (scalar keys %$blacklistref);
+
+ if ($num >= $total){
+ print "\n[-r] invoked, but number to sample is greater than total SNPs remaining after filtering!\n\n";
+	 return(1);
+ }
+
+ my @indices;
+ for my $loc (1 .. $nchar){
+	 if(!exists $blacklist{$loc}){
+		 push(@indices, $loc);
+	 }
+ }
+
+ my $tokill = (scalar @indices) - $num;
+
+ shuffle(\@indices); #Shuffle indices
+
+
+ my @remove = @indices[0..$tokill-1]; #Choose n of them for removal
+
+ #print "Need to keep:",$num, "\n";
+ #print "Total elements:",$total, "\n";
+ #print "To delete:",$tokill, "\n";
+
+ #  foreach my $k(@remove){
+	#  print $k, ",";
+ #  }
+ #  print "\n";
+ #
+	# my %hash;
+	# @hash{@remove}=();
+	# print "Keeping: ";
+ # foreach my $ind(@indices){
+	#  if (!exists $hash{$ind}){
+	# 	 print $ind, ",";
+	#  }
+ # }
+ # print "\n";
+ #my $rem = scalar @remove;
+ #print("Removing:", $rem, "\n");
+
+ foreach my $i (@remove){
+	$$blacklistref{$i} = "randomfail";
+ }
+ return (0);
+
+}
+
+sub shuffle{
+ my $array = shift;
+ my $i = @$array;
+ while (--$i){
+	 my $j = int rand($i+1);
+	 @$array[$i,$j] = @$array[$j,$i];
+ }
+}
+
+#################################################################################
+
+
 
 #parse popmap file
 sub parsePopmap{
@@ -532,7 +612,7 @@ sub phyprint{
   }
 
   # open the output file for printing
-  open( OUT, '>', $out ) or die "Can't open $out, d-bag: $!\n\n";
+  open( OUT, '>', $out ) or die "Can't open $out!: $!\n\n";
 
   # print the first line to the phylip file
   print OUT "$seqs $alignlength\n";
