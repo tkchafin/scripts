@@ -1,15 +1,15 @@
 # scripts
-Collection of scripts- mostly for manipulating, filtering, and format-conversion of DNA sequence files. Feel free to use. 
+Collection of scripts- mostly for manipulating, filtering, and format-conversion of DNA sequence files. Feel free to use.
 
 ### How to use
-Most scripts are written to accept the <-h> argument to display a help menu which should describe the function of the scripts as well as any optional or mandatory inputs. 
+Most scripts are written to accept the <-h> argument to display a help menu which should describe the function of the scripts as well as any optional or mandatory inputs.
 
-Example: 
-The Perl program "alleles2taghap.pl" takes the ".alleles" output from the RADseq assembly program pyRAD and creates the ".taghap" format for the program fineRADstructure. To display the help menu, call the program like so: 
+Example:
+The Perl program "alleles2taghap.pl" takes the ".alleles" output from the RADseq assembly program pyRAD and creates the ".taghap" format for the program fineRADstructure. To display the help menu, call the program like so:
 
     ./alleles2taghap.pl -h
 
-Which will display: 
+Which will display:
 
     tkchafin@acamel-linux1:~/scripts$ ./alleles2taghap.pl -h
 
@@ -17,7 +17,7 @@ Which will display:
 
     This script converts from the .alleles file output by pyRAD to create the input for fineRADstructure
 
-    NOTE: 
+    NOTE:
 	- All samples are assumed to be diploid.
 	- Sample names CANNOT contain underscores.
 	- Columns containing Ns or gaps will be deleted from final output
@@ -41,14 +41,14 @@ Which will display:
     Program killed: Help menu called.
 
 ### Contents
-Here is a (probably) complete list of the scripts contained here, and generally what they do. All scripts written in Python require Python3. 
+Here is a (probably) complete list of the scripts contained here, and generally what they do. All scripts written in Python require Python3.
 ```
 alleles2taghap.pl	: Converts from pyRAD .alleles format to input for fineRadStructure
 averageFastStructure.pl	: Combines multiple replicate runs of FastStructure
-batchBUCKY.pl		: Pipeline for running BUCKy. Old and probably broken. 
+batchBUCKY.pl		: Pipeline for running BUCKy. Old and probably broken.
 collapse_baits.py	: For filtering baits by SNP count from BaitsTools output
 collapseHaps.pl		: Collapse sequences to redundant consensus sequences
-compare2seqs.pl		: This was a learning exercise. Just compares sequences. 
+compare2seqs.pl		: This was a learning exercise. Just compares sequences.
 condenseAlleles.pl	: Creates a consensus of alleles (input as FASTA) per individual
 count_residues.pl	: Counts residues in an amino acid alignment
 fast2distruct.pl	: Tries to parse FastStructure ouputs to create DISTRUCT input
@@ -60,11 +60,12 @@ genesFromGFF.pl		: Extracts elements from a FASTA file, given a GFF file of anno
 makePopArt.py		: Python program to make inputs for PopArt (haplotype network program) from FASTA
 makeSAMOVA.pl		: Makes inputs for SAMOVA given FASTA and coordinates, with automatic clustering by distance
 nremover.pl		: My version of Steve Mussmann's nremover script, for filtering DNA alignments
-parallelMB.pl		: For running batches of MrBayes on a cluster, in parallel per locus 
+parallelMB.pl		: For running batches of MrBayes on a cluster, in parallel per locus
 phylip2bgc.pl		: Converts PHYLIP alignment to inputs for BGC (inference of Bayesian Genomic CLines)
 phylip2biNumNex.py	: Converts PHYLIP to bi-allelic numerically coded NEXUS for PhyloNet's MLE_BiMarkers
 phylip2introgress.pl	: Converts PHYLIP to inputs for R package INTROGRESS (introgession analyses)
-phylip2nexus.pl		: Converts PHYLIP to NEXUS 
+phylip2newhybrids.pl	: Creates inputs for NewHybrids, with missing data filters built in
+phylip2nexus.pl		: Converts PHYLIP to NEXUS
 phylip2structure.pl	: Converts PHYLIP alignment of SNPs to inputs for STRUCTURE
 pyrad2fasta.pl		: Extracts genewise alignments from pyRAD .loci format, and writes FASTA for each
 seq2structure.pl	: I assume somehow different than phylip2structure, I don't remember honestly
@@ -76,8 +77,8 @@ splitStackedFasta.pl	: Splits FASTA of specifically-formatted collapsed read clu
 stacks2fasta.pl		: Fromats output of STACKS to a new FASTA for variable loci, but querying cstacks catalog
 structure2newhy.pl	: Converts STRUCTURE file to input for NewHybrids
 subsetPhy.py		: Quickly written and shitty script to subset taxa from a PHYLIP alignment
-subsetSnps.py		: Given a list of desired columns, subsets SNPs from a STRUCTURE file 
-sumls.sh		: A bash alias for doing something with ls 
+subsetSnps.py		: Given a list of desired columns, subsets SNPs from a STRUCTURE file
+sumls.sh		: A bash alias for doing something with ls
 summaryGFF.pl		: Something old and incomplete.
 trimFastq.pl		: Perl script for end-trimming FASTQ reads
 vcf2phylip.py		: VCF to PHYLIP
