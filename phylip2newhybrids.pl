@@ -130,8 +130,12 @@ if ($onlyPhy != 1){
 	print NEWHYB "\n";
 
 	#Print P1 pure individuals first
+	open(IND, "> ind_order.txt");
+	print("Outputting individuals to NewHybrids file (in THIS order):\n");
 	my $count = 1;
-	foreach my $ind (keys %{$pop1Ref}){
+	foreach my $ind (sort keys %{$pop1Ref}){
+		print $ind, "\n";
+		print IND $ind, "\n";
 		print NEWHYB $count, "\tz0\t";
 		for (my $loc = 0; $loc < $nchar; $loc++){
 			if(!exists $blacklist{$loc+1}){
@@ -156,7 +160,9 @@ if ($onlyPhy != 1){
 		$count++;
 	}
 	#Print P2 pures
-	foreach my $ind (keys %{$pop2Ref}){
+	foreach my $ind (sort keys %{$pop2Ref}){
+		print $ind, "\n";
+		print IND $ind, "\n";
 		print NEWHYB $count, "\tz1\t";
 		for (my $loc = 0; $loc < $nchar; $loc++){
 			if(!exists $blacklist{$loc+1}){
@@ -181,7 +187,9 @@ if ($onlyPhy != 1){
 		$count++;
 	}
 	#Print admixed individuals
-	foreach my $ind (keys %{$popaRef}){
+	foreach my $ind (sort keys %{$popaRef}){
+		print $ind, "\n";
+		print IND $ind, "\n";
 		print NEWHYB $count, "\t\t";
 		for (my $loc = 0; $loc < $nchar; $loc++){
 			if(!exists $blacklist{$loc+1}){
@@ -207,6 +215,7 @@ if ($onlyPhy != 1){
 	}
 	print "Done writing NEWHYB file newhyb_dat.txt>\n\n";
 	close NEWHYB;
+	close IND;
 }
 
 if ($phyNew or $onlyPhy){
