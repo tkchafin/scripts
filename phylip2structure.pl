@@ -81,6 +81,8 @@ my $count = 0;
 open ( OUTFILE, ">", $output) || die "Can't open $output: $!";
 open ( PHY, $input ) || die "Can't open $input: $!";
 
+my $samplecount = 0;
+my $snpcount = 0;
 while ( my $line = <PHY> ){
 	$count++;
 	$count == 1 and next; #Test if $count=1, if so then skip to next iteration
@@ -125,6 +127,13 @@ while ( my $line = <PHY> ){
 
 	#Start adding allele data
 	for( my $i=0; $i <= $#seq_array; $i++ ){
+		if ($snpcount == 0){
+			$snpcount = $#seq_array;
+		}else{
+			if ($snpcount != $#seq_array){
+				print "Warning: Sample ",$b[0], " appears to have a different number of nucleotides. Something is wrong.\n";
+			}
+		}
 		if ($first_line{ uc $seq_array[$i] }){
 		    $line_1 .= "$first_line{ uc $seq_array[$i] }\t";
 		}else{
@@ -143,11 +152,13 @@ while ( my $line = <PHY> ){
 
 	print OUTFILE $line_1, "\n";
 	print OUTFILE $line_2, "\n";
+	$samplecount++;
 
 }
 
 close PHY;
 close OUTFILE;
+print ("Done! Outputted ", $samplecount, " samples and ", $snpcount, " SNPs.\n");
 exit;
 
 ############################SUBROUTINES######################################
