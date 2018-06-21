@@ -14,7 +14,7 @@ my $suppress=0;
 my $extra;
 my $locnames=0;
 my $popN = 1.0;
-my $globalN = 1.0
+my $globalN = 1.0;
 #Call sub parseArgs to parse command-line arguments
 parseArgs();
 
