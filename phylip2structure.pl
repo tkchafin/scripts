@@ -13,6 +13,8 @@ my $missing="-9";
 my $suppress=0;
 my $extra;
 my $locnames=0;
+my $popN = 1.0;
+my $globalN = 1.0
 #Call sub parseArgs to parse command-line arguments
 parseArgs();
 
@@ -182,6 +184,10 @@ Required Inputs
 	-i, --input	-  Path to the input phylip file
 	-p, --popmap	-  Path to the input population ID table
 	-o, --output	-  Path to output (including desired filename)
+	-n, --popN	- Percent missing data allowed per SNP per population [default=1.0]
+			NOTE: Only applies when popmap provided
+	-N, --globalN	- Percent missing data allowed per SNP globally [default=1.0]
+			NOTE: N filters not implemented yet.
 
 Optional inputs
 	-l, --loc	-  Bool, switch on printing of locus names in first row
@@ -202,6 +208,8 @@ NOTE: Both gaps and N\'s will be coded as missing data.\n\n";
 	'extra|e=i'	=> \$extra,
 	'loc|l!'	=> \$locnames,
 	'quiet|q!'	=> \$suppress,
+	'popN|n'	=> \$popN,
+	'globalN|N' => \$globalN,
 	);
 
 	$help == 1 and die "$usage";
