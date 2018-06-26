@@ -59,6 +59,7 @@ for my $line (split "\n", $iupac){
 #Store population identifiers for each individual (from popmap)
 my %popmap;
 my %enum;
+my %popcodes;
 if ($popmap){
     open ( POPMAP, $popmap) || die "Derp: Can't open $popmap: $!";
     my $popcount = 0;
@@ -67,6 +68,9 @@ if ($popmap){
         my @c = split /\s+/, $_;
         if ($enum{$c[1]}){
             $popmap{$c[0]} = $enum{$c[1]};
+						if (!exists $popcodes{$enum{$c[1]}}){
+							$popcodes{$enum{$c[1]}} = $c[1];
+						}
             #print "$c[0] is from pop# $popmap{$c[0]}\n";
         }else{
             $enum{$c[1]} = $popcount;
@@ -74,7 +78,11 @@ if ($popmap){
             $popmap{$c[0]} = $enum{$c[1]};
         }
     }
-close POPMAP;
+	close POPMAP;
+	print "Population codes:\n";
+		foreach my $p (sort keys %popcodes){
+			print $p, ": ", $popcodes{$p}, "\n";
+		}
 }
 
 #Begin going through phylip file
