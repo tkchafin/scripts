@@ -131,11 +131,14 @@ if ($onlyPhy != 1){
 
 	#Print P1 pure individuals first
 	open(IND, "> ind_order.txt");
-	print("Outputting individuals to NewHybrids file (in THIS order):\n");
+	open(POPS, ">pop_order.txt");
+
+	print"Outputting individuals to NewHybrids file (in THIS order):\n";
 	my $count = 1;
 	foreach my $ind (sort keys %{$pop1Ref}){
 		print $ind, "\n";
 		print IND $ind, "\n";
+		print POPS $assignRef->{$ind}, "\n";
 		print NEWHYB $count, "\tz0\t";
 		for (my $loc = 0; $loc < $nchar; $loc++){
 			if(!exists $blacklist{$loc+1}){
@@ -163,6 +166,7 @@ if ($onlyPhy != 1){
 	foreach my $ind (sort keys %{$pop2Ref}){
 		print $ind, "\n";
 		print IND $ind, "\n";
+		print POPS $assignRef->{$ind}, "\n";
 		print NEWHYB $count, "\tz1\t";
 		for (my $loc = 0; $loc < $nchar; $loc++){
 			if(!exists $blacklist{$loc+1}){
@@ -190,6 +194,7 @@ if ($onlyPhy != 1){
 	foreach my $ind (sort keys %{$popaRef}){
 		print $ind, "\n";
 		print IND $ind, "\n";
+		print POPS $assignRef->{$ind}, "\n";
 		print NEWHYB $count, "\t\t";
 		for (my $loc = 0; $loc < $nchar; $loc++){
 			if(!exists $blacklist{$loc+1}){
@@ -216,6 +221,9 @@ if ($onlyPhy != 1){
 	print "Done writing NEWHYB file newhyb_dat.txt>\n\n";
 	close NEWHYB;
 	close IND;
+	close POP;
+	print "Wrote <ind_order.txt> for order of individuals.\n";
+	print "Wrore <pop_order.txt> reporting Pop IDs of individuals. Use this with newhybs2distruct.py\n";
 }
 
 if ($phyNew or $onlyPhy){
