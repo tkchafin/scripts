@@ -59,6 +59,7 @@ fixedSNP.pl		: Parses PHYLIP file to find differentially fixed SNPs between two 
 genesFromGFF.pl		: Extracts elements from a FASTA file, given a GFF file of annotations
 makePopArt.py		: Python program to make inputs for PopArt (haplotype network program) from FASTA
 makeSAMOVA.pl		: Makes inputs for SAMOVA given FASTA and coordinates, with automatic clustering by distance
+newhybs2distruct.py	: Takes posterior probs (PofZ.txt) from NewHybrids and makes inputs to run DISTRUCT
 nremover.pl		: My version of Steve Mussmann's nremover script, for filtering DNA alignments
 parallelMB.pl		: For running batches of MrBayes on a cluster, in parallel per locus
 phylip2bgc.pl		: Converts PHYLIP alignment to inputs for BGC (inference of Bayesian Genomic CLines)
