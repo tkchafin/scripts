@@ -16,7 +16,7 @@ if( scalar( @ARGV ) == 0 ){
 
 #Parse arguments
 my %opts;
-getopts( 'p:i:1:2:a:o:hn:N:gPx', \%opts );
+getopts( 'p:i:1:2:a:o:hn:N:gPxr', \%opts );
 
 # kill if help option is true
 if( $opts{h} ){
@@ -25,7 +25,7 @@ if( $opts{h} ){
 }
 
 #get options
-my ($map, $phy, $p1, $p2, $ad, $out, $threshold, $globalThresh, $gapFalse, $phyNew, $onlyPhy) = &parseArgs(\%opts);
+my ($map, $phy, $p1, $p2, $ad, $out, $threshold, $globalThresh, $gapFalse, $phyNew, $onlyPhy, $rcalls) = &parseArgs(\%opts);
 
 #Extract pops into an array
 my @pop1 = split(/\+/,$p1);
@@ -251,6 +251,52 @@ if ($phyNew or $onlyPhy){
 	close PHY;
 }
 
+#if $rcall, print some stuff
+if ($rcalls == 1){
+	print"Printing some population-wise R calls....\n";
+
+	my %samples;
+
+	foreach my $ind (keys %{$pop1Ref}){
+		if (!exists $samples{$assignRef->{$ind}}){
+			$samples{$assignRef->{$ind}} = [$ind];
+		}else{
+			push(@{$samples{$assignRef->{$ind}}}, $ind);
+		}
+	}
+	foreach my $ind (keys %{$pop2Ref}){
+		if (!exists $samples{$assignRef->{$ind}}){
+			$samples{$assignRef->{$ind}} = [$ind];
+		}else{
+			push(@{$samples{$assignRef->{$ind}}}, $ind);
+		}
+	}
+	foreach my $ind (keys %{$popaRef}){
+		if (!exists $samples{$assignRef->{$ind}}){
+			$samples{$assignRef->{$ind}} = [$ind];
+		}else{
+			push(@{$samples{$assignRef->{$ind}}}, $ind);
+		}
+	}
+
+	foreach my $pop (keys %samples){
+		print "$pop<- genomic.clines(introgress.data=count.matrix, hi.index=hi.index.sim,loci.data=loci.data.sim,sig.test=T,classification=T, loci.touse=which(deltas>0.8), ind.touse=c(";
+		my $count = 0;
+		foreach my $assign (@{$samples{$pop}}){
+			if ($count == 0){
+				print "\"$assign\"";
+			}else{
+				print ", \"$assign\"";
+			}
+			$count++;
+		}
+		print "))\n";
+	}
+	print "\n";
+}
+
+
+
 exit 0;
 
  ########################### SUBROUTINES ###############################
@@ -272,7 +318,8 @@ exit 0;
 	print "\t-N	: Proportion of globally missing data allowed per SNP (default=0.5)\n";
 	print "\t-g	: Toggle on to TURN OFF default behavior of treating gaps as missing data\n";
 	print "\t-P	: Toggle on to output a new phylip file with the filtered data. [default=off]\n";
-	print "\t-x	: Toggle on to ONLY print a new phylip file (e.g. no INTROGRESS files)";
+	print "\t-x	: Toggle on to ONLY print a new phylip file (e.g. no INTROGRESS files)\n";
+	print "\t-r	: Toggle on to print a file with population-wise genomic.clines calls\n";
 	print "\t-h	: Displays this help message\n";
 	print "\n\n";
 }
@@ -298,8 +345,10 @@ sub parseArgs{
 	my $onlyPhy = 0;
 	$opts{x} and $onlyPhy = 1;
   my $out = $opts{o} || "out.phy";
+	my $r = 0;
+	$opts{r} and $r = 1;
   #return
-  return ($map, $phy, $p1, $p2, $ad, $out, $threshold, $globalThresh, $gapFalse, $phyNew, $onlyPhy);
+  return ($map, $phy, $p1, $p2, $ad, $out, $threshold, $globalThresh, $gapFalse, $phyNew, $onlyPhy, $r);
 }
 
 #parse popmap file
