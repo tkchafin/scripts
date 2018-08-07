@@ -60,6 +60,7 @@ genesFromGFF.pl		: Extracts elements from a FASTA file, given a GFF file of anno
 makePopArt.py		: Python program to make inputs for PopArt (haplotype network program) from FASTA
 makeSAMOVA.pl		: Makes inputs for SAMOVA given FASTA and coordinates, with automatic clustering by distance
 newhybs2distruct.py	: Takes posterior probs (PofZ.txt) from NewHybrids and makes inputs to run DISTRUCT
+newhybs2props.py	: Calculates geneological assignment proportions from NewHybrids, outputs table and files to spoof DISTRUCT
 nremover.pl		: My version of Steve Mussmann's nremover script, for filtering DNA alignments
 parallelMB.pl		: For running batches of MrBayes on a cluster, in parallel per locus
 phylip2bgc.pl		: Converts PHYLIP alignment to inputs for BGC (inference of Bayesian Genomic CLines)
@@ -74,6 +75,7 @@ short2fullPopmap.pl	: Does a very specific thing to my tab-delimited popmap file
 slidingWindowGC.pl	: Calculates GC content along a sliding window down a sequence
 snps2phy.sh		: Shell script to convert pyRAD .snp output to PHYLIP format
 splitFASTA.pl		: Breaks a FASTA file into a user-defined number of chunks. For helping parse a large genome
+splitFastaPops.py	: Pulls subsets from FASTA file to new FASTA file, given tab-delimited table of population IDs
 splitStackedFasta.pl	: Splits FASTA of specifically-formatted collapsed read clusters
 stacks2fasta.pl		: Fromats output of STACKS to a new FASTA for variable loci, but querying cstacks catalog
 structure2newhy.pl	: Converts STRUCTURE file to input for NewHybrids
