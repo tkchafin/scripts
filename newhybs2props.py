@@ -88,7 +88,7 @@ def main():
 						pop_props[key][i] = str("{0:.4f}".format((v/total)))
 
 					#print(key,":","\t".join(pop_props[key]))
-					indline = str(key) + "\t".join(pop_props[key]) + "\n"
+					indline = str(key) + "\t" + "\t".join(pop_props[key]) + "\n"
 					IQ.write(indline)
 			except IOError as e:
 				print("Could not open file:",e)
