@@ -41,6 +41,8 @@ def main():
 					if sample in seen:
 						to_write = ">" + str(sample) + "\n" + seqs[sample] + "\n"
 						fh.write(to_write)
+					else:
+						print("Sample not found in FASTA:",sample)
 			except IOError as e:
 				print("Could not read file:",e)
 				sys.exit(1)

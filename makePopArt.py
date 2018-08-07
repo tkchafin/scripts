@@ -55,17 +55,18 @@ def main():
 
 			#Write poptraits for each sample...
 			for ind in pop_assign:
-				iline = ind + " "
-				for i in pops:
-					if pops[i] == pop_assign[ind]:
-						iline = iline + "1"
-					else:
-						iline = iline + "0"
-					if int(i) == len(pops.keys())-1:
-						iline = iline + "\n"
-					else:
-						iline = iline + ","
-				fh.write(iline)
+				if ind in seqs.keys():
+					iline = ind + " "
+					for i in pops:
+						if pops[i] == pop_assign[ind]:
+							iline = iline + "1"
+						else:
+							iline = iline + "0"
+						if int(i) == len(pops.keys())-1:
+							iline = iline + "\n"
+						else:
+							iline = iline + ","
+					fh.write(iline)
 			#write end of block
 			end = ";\nEND;\n"
 			fh.write(end)
