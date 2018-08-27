@@ -90,7 +90,7 @@ def main():
 				indline = str(ind) + "\t" + "".join(data) + "\n"
 				pfh.write(indline)
 
-				mapline = str(pop) + "\n"
+				mapline = str(ind) + "\t" + str(pop) + "\n"
 				mfh.write(mapline)
 		pfh.close()
 		mfh.close()
