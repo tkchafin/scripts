@@ -16,7 +16,7 @@ if( scalar( @ARGV ) == 0 ){
 
 #Parse arguments
 my %opts;
-getopts( 'p:i:1:2:a:o:hn:N:gPxr', \%opts );
+getopts( 'p:i:1:2:a:o:hn:N:gPxrO', \%opts );
 
 # kill if help option is true
 if( $opts{h} ){
@@ -25,7 +25,7 @@ if( $opts{h} ){
 }
 
 #get options
-my ($map, $phy, $p1, $p2, $ad, $out, $threshold, $globalThresh, $gapFalse, $phyNew, $onlyPhy, $rcalls) = &parseArgs(\%opts);
+my ($map, $phy, $p1, $p2, $ad, $out, $threshold, $globalThresh, $gapFalse, $phyNew, $onlyPhy, $rcalls, $order) = &parseArgs(\%opts);
 
 #Extract pops into an array
 my @pop1 = split(/\+/,$p1);
@@ -114,6 +114,14 @@ if ($onlyPhy != 1){
 		push( @line2, $adInd);
 	}
 
+	if ($order == 1){
+		open (ORDER, ">pop_order_admix.txt");
+		foreach my $adInd (sort keys %{$popaRef}){
+			print ORDER ($assignRef->{$adInd}, "\n");
+		}
+		close(ORDER)
+	}
+
 	my $line1str = join(",", @line1);
 	my $line2str = join(",", @line2);
 
@@ -125,7 +133,7 @@ if ($onlyPhy != 1){
 		if(!exists $blacklist{$loc+1}){
 			#write p1 file
 			my @p1line;
-			foreach my $ind (keys %{$pop1Ref}){
+			foreach my $ind (sort keys %{$pop1Ref}){
 				my $nuc = ${$pop1Ref->{$ind}}->[$loc];
 				$nuc =~ s/A/A\/A/g;
 				$nuc =~ s/T/T\/T/g;
@@ -146,7 +154,7 @@ if ($onlyPhy != 1){
 
 			#Write p2 file
 			my @p2line;
-			foreach my $ind (keys %{$pop2Ref}){
+			foreach my $ind (sort keys %{$pop2Ref}){
 				my $nuc = ${$pop2Ref->{$ind}}->[$loc];
 				$nuc =~ s/A/A\/A/g;
 				$nuc =~ s/T/T\/T/g;
@@ -167,7 +175,7 @@ if ($onlyPhy != 1){
 
 			#Populate admix file
 			my @admixline;
-			foreach my $ind (keys %{$popaRef}){
+			foreach my $ind (sort keys %{$popaRef}){
 				my $nuc = ${$popaRef->{$ind}}->[$loc];
 				$nuc =~ s/A/A\/A/g;
 				$nuc =~ s/T/T\/T/g;
@@ -320,6 +328,7 @@ exit 0;
 	print "\t-P	: Toggle on to output a new phylip file with the filtered data. [default=off]\n";
 	print "\t-x	: Toggle on to ONLY print a new phylip file (e.g. no INTROGRESS files)\n";
 	print "\t-r	: Toggle on to print a file with population-wise genomic.clines calls\n";
+	print "\t-O	: Toggle on to print a file of pop assignments for ADMIX pops <pop_order_admix.txt>\n";
 	print "\t-h	: Displays this help message\n";
 	print "\n\n";
 }
@@ -347,8 +356,10 @@ sub parseArgs{
   my $out = $opts{o} || "out.phy";
 	my $r = 0;
 	$opts{r} and $r = 1;
+	my $ord = 0;
+	$opts{O} and $ord = 1;
   #return
-  return ($map, $phy, $p1, $p2, $ad, $out, $threshold, $globalThresh, $gapFalse, $phyNew, $onlyPhy, $r);
+  return ($map, $phy, $p1, $p2, $ad, $out, $threshold, $globalThresh, $gapFalse, $phyNew, $onlyPhy, $r, $ord);
 }
 
 #parse popmap file
