@@ -55,6 +55,7 @@ fast2distruct.pl	: Tries to parse FastStructure ouputs to create DISTRUCT input
 fasta2length.pl		: Calculate non-gap character length of sequences
 fasta2nexus.pl		: Converts FASTA to NEXUS format
 filter_loci.pl		: Parses a directory of FASTA alignments, and blacklists those with too low alignment coverage
+filterLoci.py		: Filters a pyRAD .loci file on individual coverage and number of parsimony-informative sites
 fixedSNP.pl		: Parses PHYLIP file to find differentially fixed SNPs between two given populations
 genesFromGFF.pl		: Extracts elements from a FASTA file, given a GFF file of annotations
 makeHyde.py		: Makes inputs for HyDe- Hybrid Detection program
