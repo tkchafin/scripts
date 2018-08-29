@@ -217,8 +217,8 @@ class parseArgs():
 				assert False, "Unhandled option %r"%opt
 
 		#Check manditory options are set
-		if not self.phylip and not self.fasta:
-			self.display_help("Error: Missing required alignment file (--fasta or --input)")
+		if not self.phylip :
+			self.display_help("Error: Missing required alignment file (--input)")
 		if not self.popmap:
 			self.display_help("Error: Missing required popmap file (-p, --popmap)")
 		if self.include and self.exclude:
