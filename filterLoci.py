@@ -4,12 +4,17 @@ import re
 import sys
 import os
 import getopt
+import random
 
 
 def main():
 	params = parseArgs()
 
 	if params.input:
+
+		if params.popmap:
+			print("Parsing popmap file...")
+			pop_assign = parsePopmap(params.popmap)
 
 		allLoci = list()
 		locNum = 1
@@ -22,6 +27,16 @@ def main():
 				passed=0
 				sampFail=0
 				varsFail=0
+				snaqFail=0
+
+
+				if params.snaqr:
+					print("USING SNAQR PRESET. ONLY LOCI WITH AT LEAST 1 SAMPLE PER POP WILL BE KEPT")
+				if params.snaq:
+					bestInds = getBestIndLoci(params.input, pop_assign, params.pis)
+					print("USING SNAQ PRESET. THE FOLLOWING INDIVIDUALS WILL BE SAMPLED AS REPRESENTATIVES:")
+					for pop in bestInds:
+						print("%s: %s"%(pop, bestInds[pop]))
 
 				for line in fh:
 					line = line.strip()
@@ -48,7 +63,22 @@ def main():
 
 							if params.nex:
 								n = str(params.out) + "_" + str(locNum) + ".nex"
-								dict2nexus(n, aln_d)
+								if params.snaq:
+									aln_new = sampledSnaq(aln_d,bestInds)
+									if aln_new:
+										dict2nexus(n, aln_new)
+									else:
+										snaqFail+=1
+										passed -= 1
+								elif params.snaqr:
+									aln_new = randomSnaq(aln_d,pop_assign)
+									if aln_new:
+										dict2nexus(n, aln_new)
+									else:
+										snaqFail+=1
+										passed -= 1
+								else:
+									dict2nexus(n, aln_d)
 							numSamp=0
 							numPIS=0
 						else:
@@ -72,10 +102,122 @@ def main():
 		print("Number of loci passing filters: %s (of %s total)" %(passed, locNum))
 		print("\t",sampFail,"loci failed for too few individuals.")
 		print("\t",varsFail,"loci failed for too few parsimony-informative sites\n")
+		if params.snaq:
+			print("\t",snaqFail,"loci failed SNAQ-sampling (maybe try --snaqr instead?)\n")
 
 	else:
 		print("No input provided.")
 		sys.exit(1)
+
+def sampledSnaq(aln, best):
+	ret = dict()
+	for pop in best.keys():
+		if pop in aln:
+			ret[pop] = aln[pop]
+		else:
+			return(False)
+	return(ret)
+
+def randomSnaq(aln,popmap):
+	pop_enum = set(popmap.values())
+	ret=dict()
+	for pop in pop_enum:
+		options = list()
+		for samp in aln:
+			if samp in popmap and pop == popmap[samp]:
+				options.append(samp)
+		if len(options) < 1:
+			return(False)
+		elif len(options) == 1:
+			ret[pop] = aln[options[0]]
+		else:
+			ret[pop] = aln[random.choice(options)]
+	return(ret)
+
+
+#Function returns dict of highest coverage individual for each pop in pop_assign
+def getBestIndLoci(infile, popmap, thresh):
+	pop_enum = set(popmap.values())
+
+	indcovs=dict()
+	for ind in popmap.keys():
+		indcovs[ind] = 0
+
+	#Get individual coverage by scanning loci file
+	with open(infile, "r") as fh:
+		try:
+			seen = list()
+			num=0
+			for line in fh:
+				line = line.strip()
+				if not line:
+					continue
+				if line[0] == ">":
+					line = line.replace(">","")
+					stuff = line.split()
+					identifier = stuff[0].replace(" ", "")
+					seen.append(identifier)
+
+				elif line[0] == "/": #alignment end. grab numPIS and parse locus
+					num+=1
+					numPIS = line.count("*")
+					if numPIS >= thresh: #locus passes
+						for samp in seen:
+							if samp in indcovs:
+								indcovs[samp] += 1
+							else:
+								indcovs[samp] = 1
+					seen = list()
+		except IOError as e:
+			print("Couldn't read file %s: %s" %(infile,e))
+			sys.exit(1)
+		except Exception as e:
+			print("Unexpected error reading file %s: %s" %(infile, e))
+			sys.exit(1)
+		finally:
+			fh.close()
+
+	#Figure out which samples per pop have the highest coverage
+	bestDict = dict()
+	for pop in pop_enum:
+		best = None
+		bestcount = None
+		for ind in popmap.keys():
+			if popmap[ind] == pop:
+				if best:
+					if indcovs[ind] > bestcount:
+						best = ind
+						bestcount = indcovs[ind]
+				else:
+					best = ind
+					bestcount = indcovs[ind]
+		bestDict[pop] = best
+
+	return(bestDict)
+
+#function reads a tab-delimited popmap file and return dictionary of assignments
+def parsePopmap(popmap):
+	ret = dict()
+	if os.path.exists(popmap):
+		with open(popmap, 'r') as fh:
+			try:
+				contig = ""
+				seq = ""
+				for line in fh:
+					line = line.strip()
+					if not line:
+						continue
+					else:
+						stuff = line.split()
+						ret[stuff[0]] = stuff[1]
+				return(ret)
+			except IOError:
+				print("Could not read file ",pairs)
+				sys.exit(1)
+			finally:
+				fh.close()
+	else:
+		raise FileNotFoundError("File %s not found!"%popmap)
 
 #function writes everything in list to a file
 def writeStuff(stuff, f):
@@ -146,14 +288,16 @@ class parseArgs():
 	def __init__(self):
 		#Define options
 		try:
-			options, remainder = getopt.getopt(sys.argv[1:], 'i:s:p:ho:nfl', \
-			["input=", "samples=", "pis=","help","out=", "nex", "fas", "loci"])
+			options, remainder = getopt.getopt(sys.argv[1:], 'i:s:p:ho:nflP:X:SR', \
+			["input=", "samples=", "pis=","help","out=", "nex", "fas", "loci",
+			"popmap=", "snaq", "exclude=","snaqR","snaqr"])
 		except getopt.GetoptError as err:
 			print(err)
 			self.display_help("\nExiting because getopt returned non-zero exit status.")
 		#Default values for params
 		#Input params
 		self.input=None
+		self.popmap=None
 		self.samples=1
 		self.pis=1
 		self.out="loc"
@@ -161,6 +305,10 @@ class parseArgs():
 		self.nex=False
 		self.fas=False
 		self.loci=False
+
+		self.snaq=False
+		self.snaqr=False
+		self.exclude=list()
 
 
 		#First pass to see if help menu was called
@@ -190,12 +338,30 @@ class parseArgs():
 				self.fas=True
 			elif opt in ('l', 'loci'):
 				self.loci=True
+			elif opt in ('S','snaq'):
+				self.snaq=True
+			elif opt in ('R','snaqr', "snaqR"):
+				self.snaqr=True
+			elif opt in ('X','exclude'):
+				self.exclude=arg.split(",")
+			elif opt in ('P','popmap'):
+				self.popmap=arg
 			else:
 				assert False, "Unhandled option %r"%opt
 
 		#Check manditory options are set
 		if not self.input:
 			self.display_help(".loci file must be provided (-l, --loci)")
+
+		if self.snaq or self.snaqr:
+			self.fas=False
+			self.nex=True
+			self.loci=False
+			if not self.popmap:
+				self.display_help("You must provide a popmap with --snaq preset")
+		if self.snaq and self.snaqr:
+			self.display_help("You can't use multiple presets!")
+
 
 		if not self.loci and not self.nex and not self.fas:
 			print("Warning: No output type chosen. Are you sure you wanted this?? filterLoci.py will only report number of loci passing filters.")
@@ -213,16 +379,25 @@ class parseArgs():
 
 		print("""
 	Arguments:
-		INPUT FILES [REQUIRED]
+		INPUT FILES
 		-i,--input	: Input file as PHYLIP
+		-P,--popmap	: (Optional) Population map input file
 
-		PARAMETERS [OPTIONAL]
+		PARAMETERS
 		-s,--samples	: Minimum number of samples to retain locus [def=1]
 		-p,--pis	: Minimum number of parsimony-informative sites [def=1]
 		-n,--nex	: Boolean. Write loci as individual NEXUS files [false]
 		-f,--fas	: Boolean. Write loci as individual FASTA files [false]
 		-l,--loci	: Boolean. Write loci as new .loci file [false]
 		-o,--out	: Output file prefix
+
+		PRESETS
+		-S,--snaq	: (only if -P) Preps .loci file for my SNaQ pipeline
+			--Subsamples all --popmap populations to 1 sample per pop
+			--Finds the individual with highest coverage and keeps it
+			--Only retains loci containing 1 sample per popmap pop
+			--Outputs only as NEXUS per locus
+		-R,--snaqR	: --snaq but randomly sampling one sample per pop
 
 """)
 		sys.exit()
