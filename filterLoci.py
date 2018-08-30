@@ -44,17 +44,19 @@ def main():
 						continue
 					if line[0] == ">":
 						allLoci.append(line)
-						line = line.replace(">","")
 						stuff = line.split()
-						identifier = stuff[0].replace(" ", "")
-						seqs = stuff[1].replace(" ", "")
+						identifier = stuff[0].replace(">", "")
+						seqs = stuff[1]
 						aln_d[identifier] = seqs
+						#print(len(seqs))
 						numSamp += 1
 					elif line[0] == "/": #alignment end. grab numPIS and parse locus
+						#print("loc", locNum)
 						numPIS = line.count("*")
 						allLoci.append(line)
 						locNum += 1
 						if numPIS >= params.pis and numSamp >= params.samples:
+
 							passed += 1
 							#Write to desired location
 							if params.fas:
@@ -86,6 +88,7 @@ def main():
 								varsFail += 1
 							if numSamp < params.samples:
 								sampFail += 1
+						aln_d=dict() #clear alignment
 
 			except IOError as e:
 				print("Couldn't read file %s: %s" %(params.input,e))
@@ -102,8 +105,8 @@ def main():
 		print("Number of loci passing filters: %s (of %s total)" %(passed, locNum))
 		print("\t",sampFail,"loci failed for too few individuals.")
 		print("\t",varsFail,"loci failed for too few parsimony-informative sites\n")
-		if params.snaq:
-			print("\t",snaqFail,"loci failed SNAQ-sampling (maybe try --snaqr instead?)\n")
+		if params.snaq or params.snaqr:
+			print("\t",snaqFail,"loci failed SNAQ-sampling\n")
 
 	else:
 		print("No input provided.")
@@ -120,11 +123,13 @@ def sampledSnaq(aln, best):
 
 def randomSnaq(aln,popmap):
 	pop_enum = set(popmap.values())
+	#print(pop_enum)
 	ret=dict()
+
 	for pop in pop_enum:
 		options = list()
-		for samp in aln:
-			if samp in popmap and pop == popmap[samp]:
+		for samp in aln.keys():
+			if samp in popmap.keys() and pop == popmap[samp]:
 				options.append(samp)
 		if len(options) < 1:
 			return(False)
@@ -255,7 +260,7 @@ def writeFasta(d, f):
 def dict2nexus(nex, aln):
 	with open(nex, 'w') as fh:
 		try:
-			slen = getSeqLen_min(aln)
+			slen = getSeqLen(aln)
 			header = "#NEXUS\n\nBEGIN DATA;\nDIMENSIONS NTAX=" + str(len(aln)) + " NCHAR=" + str(slen) + ";\n"
 			header = header + "FORMAT DATATYPE=DNA MISSING=N GAP=-;\n\nMATRIX\n"
 			fh.write(header)
@@ -272,14 +277,16 @@ def dict2nexus(nex, aln):
 
 #Goes through a dict of sequences and get the alignment length
 #returns minimum length
-def getSeqLen_min(aln):
+def getSeqLen(aln):
 	length = None
 	for key, val in aln.items():
 		if not length:
 			length = len(val)
 		else:
-			if length >= len(val):
-				length = len(val)
+			if length != len(val):
+				print("Warning! Sequences in alignment not of equal length! Writing to BAD.fasta")
+				writeFasta(aln, "BAD.fasta")
+				#sys.exit(0)
 	return(length)
 
 
@@ -354,9 +361,7 @@ class parseArgs():
 			self.display_help(".loci file must be provided (-l, --loci)")
 
 		if self.snaq or self.snaqr:
-			self.fas=False
-			self.nex=True
-			self.loci=False
+			self.nex = True
 			if not self.popmap:
 				self.display_help("You must provide a popmap with --snaq preset")
 		if self.snaq and self.snaqr:
@@ -396,7 +401,6 @@ class parseArgs():
 			--Subsamples all --popmap populations to 1 sample per pop
 			--Finds the individual with highest coverage and keeps it
 			--Only retains loci containing 1 sample per popmap pop
-			--Outputs only as NEXUS per locus
 		-R,--snaqR	: --snaq but randomly sampling one sample per pop
 
 """)
