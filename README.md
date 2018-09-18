@@ -54,6 +54,7 @@ count_residues.pl	: Counts residues in an amino acid alignment
 fast2distruct.pl	: Tries to parse FastStructure ouputs to create DISTRUCT input
 fasta2length.pl		: Calculate non-gap character length of sequences
 fasta2nexus.pl		: Converts FASTA to NEXUS format
+findBreaksVCF.py:	: Breaks contigs in VCF to chunks of X parsimony-informative SNPs, for running MDL
 filter_loci.pl		: Parses a directory of FASTA alignments, and blacklists those with too low alignment coverage
 filterLoci.py		: Filters a pyRAD .loci file on individual coverage and number of parsimony-informative sites
 fixedSNP.pl		: Parses PHYLIP file to find differentially fixed SNPs between two given populations
@@ -85,6 +86,7 @@ subsetPhy.py		: Quickly written and shitty script to subset taxa from a PHYLIP a
 subsetSnps.py		: Given a list of desired columns, subsets SNPs from a STRUCTURE file
 sumls.sh		: A bash alias for doing something with ls
 summaryGFF.pl		: Something old and incomplete.
+treeExpansion.py	: Converts a Newick tree of clade names, expanded to all taxa in given tab-delimited file
 trimFastq.pl		: Perl script for end-trimming FASTQ reads
 vcf2phylip.py		: VCF to PHYLIP
 ```
