@@ -30,11 +30,12 @@ def main():
 			count = 0
 		#If we entered new chromosome, submit old break
 		elif this_chrom != rec.CHROM:
+			t = tuple([this_chrom, start, contigs[this_chrom]])
+			regions.append(t)
+			this_chrom = rec.CHROM
 			start = 1
 			stop = 1
 			count = 0
-			t = tuple([this_chrom, start, contigs[this_chrom]])
-			regions.append(t)
 
 		#if this SNP is parsimony-informative
 		if rec.is_snp and not rec.is_monomorphic:
