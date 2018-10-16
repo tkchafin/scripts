@@ -37,6 +37,9 @@ def main():
 					print("USING SNAQ PRESET. THE FOLLOWING INDIVIDUALS WILL BE SAMPLED AS REPRESENTATIVES:")
 					for pop in bestInds:
 						print("%s: %s"%(pop, bestInds[pop]))
+				if params.pomo:
+					print("USING POMO PRESET. ONLY LOCI WITH AT LEAST 1 SAMPLE PER POP WILL BE KEPT")
+
 
 				for line in fh:
 					line = line.strip()
