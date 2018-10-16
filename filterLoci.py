@@ -391,10 +391,10 @@ class parseArgs():
 		if not self.input:
 			self.display_help(".loci file must be provided (-l, --loci)")
 
-		if self.snaq or self.snaqr:
+		if self.snaq or self.snaqr or self.pomo:
 			self.nex = True
 			if not self.popmap:
-				self.display_help("You must provide a popmap with --snaq preset")
+				self.display_help("You must provide a popmap with presets")
 		if self.snaq and self.snaqr:
 			self.display_help("You can't use multiple presets!")
 
