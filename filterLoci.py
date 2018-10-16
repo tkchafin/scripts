@@ -79,6 +79,13 @@ def main():
 									else:
 										snaqFail+=1
 										passed -= 1
+								elif params.pomo:
+									aln_new = sampledPop(aln_d, pop_assign, params.pomo)
+									if aln_new:
+										dict2nexus(n, aln_new)
+									else:
+										snaqFail+=1
+										passed -= 1
 								else:
 									dict2nexus(n, aln_d)
 							numSamp=0
@@ -137,6 +144,27 @@ def randomSnaq(aln,popmap):
 			ret[pop] = aln[options[0]]
 		else:
 			ret[pop] = aln[random.choice(options)]
+	return(ret)
+
+def sampledPop(aln,popmap, num):
+	pop_enum = set(popmap.values())
+	#print(pop_enum)
+	ret=dict()
+
+	for pop in pop_enum:
+		options = list()
+		for samp in aln.keys():
+			if samp in popmap.keys() and pop == popmap[samp]:
+				options.append(samp)
+		if len(options) < 1:
+			return(False)
+		elif len(options) < num:
+			for opt in options:
+				ret[pop] = aln[opt]
+		else:
+			random.shuffle(options)
+			for opt in options[0:num-1]:
+				ret[pop] = aln[opt]
 	return(ret)
 
 
@@ -295,9 +323,9 @@ class parseArgs():
 	def __init__(self):
 		#Define options
 		try:
-			options, remainder = getopt.getopt(sys.argv[1:], 'i:s:p:ho:nflP:X:SR', \
+			options, remainder = getopt.getopt(sys.argv[1:], 'i:s:p:ho:nflP:X:SRV:', \
 			["input=", "samples=", "pis=","help","out=", "nex", "fas", "loci",
-			"popmap=", "snaq", "exclude=","snaqR","snaqr"])
+			"popmap=", "snaq", "exclude=","snaqR","snaqr", 'pomo'])
 		except getopt.GetoptError as err:
 			print(err)
 			self.display_help("\nExiting because getopt returned non-zero exit status.")
@@ -315,6 +343,7 @@ class parseArgs():
 
 		self.snaq=False
 		self.snaqr=False
+		self.pomo=None
 		self.exclude=list()
 
 
@@ -353,6 +382,8 @@ class parseArgs():
 				self.exclude=arg.split(",")
 			elif opt in ('P','popmap'):
 				self.popmap=arg
+			elif opt in ('V', 'pomo'):
+				self.pomo=int(arg)
 			else:
 				assert False, "Unhandled option %r"%opt
 
@@ -402,6 +433,7 @@ class parseArgs():
 			--Finds the individual with highest coverage and keeps it
 			--Only retains loci containing 1 sample per popmap pop
 		-R,--snaqR	: --snaq but randomly sampling one sample per pop
+		-V,--pomo	: Subsamples UP TO [x] individuals per pop
 
 """)
 		sys.exit()
