@@ -15,7 +15,7 @@ if( scalar( @ARGV ) == 0 ){
 
 #Parse arguments
 my %opts;
-getopts( 'p:i:o:hn:N:gPxrOm:', \%opts );
+getopts( 'p:i:o:hn:N:gPxrOm:s', \%opts );
 
 # kill if help option is true
 if( $opts{h} ){
@@ -24,7 +24,7 @@ if( $opts{h} ){
 }
 
 #get options
-my ($map, $phy, $out, $threshold, $globalThresh, $gapFalse, $minPop) = &parseArgs(\%opts);
+my ($map, $phy, $out, $threshold, $globalThresh, $gapFalse, $minPop, $skipMiss) = &parseArgs(\%opts);
 
 
 # hash of loci with too much missing data
@@ -63,16 +63,18 @@ foreach my $p (keys %{$popAligns}){
 # foreach my $p (keys %{$popAligns}){
 # 	print $p, "\n";
 # }
+if ($skip == 0){
+	if ($gapFalse == 1){
+		&getBlacklistSep($popAligns, $threshold, $globalThresh, \%blacklist);
+	}else{
+		&getBlacklistGap($popAligns, $threshold, $globalThresh, \%blacklist);
+	}
+	my $nFail = (keys %blacklist);
 
-if ($gapFalse == 1){
-	&getBlacklistSep($popAligns, $threshold, $globalThresh, \%blacklist);
+	print($nFail ," loci had greater than ",$threshold, " missing data. Removing them.\n");
 }else{
-	&getBlacklistGap($popAligns, $threshold, $globalThresh, \%blacklist);
+	print "Skipping calculation of missing data.\n";
 }
-my $nFail = (keys %blacklist);
-
-print($nFail ," loci had greater than ",$threshold, " missing data. Removing them.\n");
-
 
 print("Writing new PHYLIP file <out.phy>\n");
 open (PHY, "> out.phy");
@@ -131,6 +133,7 @@ exit 0;
 	print "\t-n	: Proportion missing data allowed per population per SNP (default=0.5)\n";
 	print "\t-N	: Proportion of globally missing data allowed per SNP (default=0.5)\n";
 	print "\t-g	: Toggle on to TURN OFF default behavior of treating gaps as missing data\n";
+	print "\t-s	: Skip calculating missing data, and just drop populations with too few inds\n";
 	print "\t-h	: Displays this help message\n";
 	print "\n\n";
 }
@@ -147,12 +150,14 @@ sub parseArgs{
 	my $threshold  = $opts{n} || 0.5;
 	my $gapFalse = 0;
 	my $phyNew = 0;
+	my $skip = 0;
+	$opts{s} and $skip = 1;
 	my $minPop = $opts{m} || 0;
 	$opts{g} and $gapFalse = 1;
 	my $globalThresh = $opts{N} || 0.5;
   my $out = $opts{o} || "out.phy";
   #return
-  return ($map, $phy, $out, $threshold, $globalThresh, $gapFalse, $minPop);
+  return ($map, $phy, $out, $threshold, $globalThresh, $gapFalse, $minPop, $skip);
 }
 
 sub uniq {
