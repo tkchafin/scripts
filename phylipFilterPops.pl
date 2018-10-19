@@ -44,7 +44,7 @@ print "Total characters in phylip data matrix: $nchar\n\n";
 
 #Get pop alignments only with ind as key and array of seqs as value
 my @vals = values %$assignRef;
-my @pops = uniq @vals;
+my @pops = uniq(@vals);
 
 my $popAligns = &getSepMultPops($assignRef, $allRef, \@pops);
 
