@@ -72,6 +72,7 @@ phylip2introgress.pl	: Converts PHYLIP to inputs for R package INTROGRESS (intro
 phylip2newhybrids.pl	: Creates inputs for NewHybrids, with missing data filters built in
 phylip2nexus.pl		: Converts PHYLIP to NEXUS
 phylip2structure.pl	: Converts PHYLIP alignment of SNPs to inputs for STRUCTURE
+phylipFilterPops.pl	: Filters SNPs for creating PoMo-IQTREE inputs
 pyrad2fasta.pl		: Extracts genewise alignments from pyRAD .loci format, and writes FASTA for each
 seq2structure.pl	: I assume somehow different than phylip2structure, I don't remember honestly
 short2fullPopmap.pl	: Does a very specific thing to my tab-delimited popmap files
