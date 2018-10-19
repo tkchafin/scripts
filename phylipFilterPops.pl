@@ -6,7 +6,6 @@
 use strict;
 use warnings;
 use Getopt::Std;
-use List::MoreUtils qw(uniq);
 
 #Die if no arguments given
 if( scalar( @ARGV ) == 0 ){
@@ -154,6 +153,11 @@ sub parseArgs{
   my $out = $opts{o} || "out.phy";
   #return
   return ($map, $phy, $out, $threshold, $globalThresh, $gapFalse, $minPop);
+}
+
+sub uniq {
+  my %seen;
+  return grep { !$seen{$_}++ } @_;
 }
 
 #parse popmap file
