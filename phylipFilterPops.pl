@@ -95,11 +95,11 @@ print PHY $indnum, " ", $locnum, "\n";
 #print data for P1
 foreach my $pop (keys %{$popAligns}){
 	foreach my $ind (keys %{$popAligns->{$pop}}){
-		print $ind, "\n";
+		#print $ind, "\n";
 		print PHY $ind, "\t";
 		for (my $l = 0; $l < $nchar; $l++){
 			if(!exists $blacklist{$l+1}){
-				print $pop, "\n";
+				#print $pop, "\n";
 				#print @{$popAligns->{$pop}->{$ind}}[0], "\n";
 				print PHY ${$popAligns->{$pop}->{$ind}}[$l];
 			}
