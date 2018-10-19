@@ -49,7 +49,7 @@ my @pops = uniq @vals;
 
 my $popAligns = &getSepMultPops($assignRef, $allRef, \@pops);
 
-#remove pops with too little data 
+#remove pops with too little data
 foreach my $p (keys %{$popAligns}){
 	my $count=0;
 	foreach my $ind (keys %{$popAligns->{$p}}){
@@ -65,235 +65,53 @@ foreach my $p (keys %{$popAligns}){
 # 	print $p, "\n";
 # }
 
-
-
 if ($gapFalse == 1){
 	&getBlacklistSep($popAligns, $threshold, $globalThresh, \%blacklist);
 }else{
-	#&getBlacklistGap($threshold, $globalThresh, $pop1Ref, $pop2Ref, $popaRef, \%blacklist);
+	&getBlacklistGap($popAligns, $threshold, $globalThresh, \%blacklist);
 }
 my $nFail = (keys %blacklist);
 
 print($nFail ," loci had greater than ",$threshold, " missing data. Removing them.\n");
 
 
-#Check if pops contain data
-# my $num1 = keys %{$pop1Ref};
-# my $num2 = keys %{$pop2Ref};
-# my $num3 = keys %{$popaRef};
+print("Writing new PHYLIP file <out.phy>\n");
+open (PHY, "> out.phy");
+my $locnum = 0;
+my $indnum = 0;
+for (my $loc = 0; $loc < $nchar; $loc++){
+	if(!exists $blacklist{$loc+1}){
+		$locnum++;
+	}
+}
 
-# if ($num1< 1){
-#   die "Error: No individuals for pop ID <$p1> were found!\n\n";
+foreach my $pop (keys %{$popAligns}){
+	foreach my $ind (keys %{$popAligns->{$pop}}){
+		$indnum++;
+	}
+}
+
+print PHY $indnum, " ", $locnum, "\n";
+
+#print data for P1
+foreach my $pop (keys %{$popAligns}){
+	foreach my $ind (keys %{$popAligns->{$pop}}){
+		print $ind, "\n";
+		print PHY $ind, "\t";
+		for (my $l = 0; $l < $nchar; $l++){
+			if(!exists $blacklist{$l+1}){
+				print $pop, "\n";
+				#print @{$popAligns->{$pop}->{$ind}}[0], "\n";
+				print PHY ${$popAligns->{$pop}->{$ind}}[$l];
+			}
+		}
+		print PHY "\n";
+	}
+}
+
+close PHY;
 
 
-# #Open filstreams
-# if ($onlyPhy != 1){
-# 	open(ADMIX, "> admix.csv");
-# 	open(LOCI, "> loci.txt");
-# 	open(P1DATA, "> p1data.csv");
-# 	open(P2DATA, "> p2data.csv");
-#
-# 	#Print loci.txt file
-# 	print LOCI "locus,type\n";
-# 	for my $nloci (1 .. $nchar){
-# 		if(!exists $blacklist{$nloci}){
-# 			print LOCI "loci$nloci,C\n";
-# 		}
-# 	}
-#
-# 	print "Done writing LOCI file <loci.txt>\n";
-# 	close LOCI;
-#
-# 	#Print header lines of admix file
-# 	my @line1;
-# 	my @line2;
-# 	foreach my $adInd (keys %{$popaRef}){
-# 		push( @line1, "pop1");
-# 		push( @line2, $adInd);
-# 	}
-#
-# 	if ($order == 1){
-# 		open (ORDER, ">pop_order_admix.txt");
-# 		foreach my $adInd (sort keys %{$popaRef}){
-# 			print ORDER ($assignRef->{$adInd}, "\n");
-# 		}
-# 		close(ORDER)
-# 	}
-#
-# 	my $line1str = join(",", @line1);
-# 	my $line2str = join(",", @line2);
-#
-# 	print ADMIX $line1str, "\n";
-# 	print ADMIX $line2str, "\n";
-#
-# 	#format and print files for introgress
-# 	for (my $loc = 0; $loc < $nchar; $loc++){
-# 		if(!exists $blacklist{$loc+1}){
-# 			#write p1 file
-# 			my @p1line;
-# 			foreach my $ind (sort keys %{$pop1Ref}){
-# 				my $nuc = ${$pop1Ref->{$ind}}->[$loc];
-# 				$nuc =~ s/A/A\/A/g;
-# 				$nuc =~ s/T/T\/T/g;
-# 				$nuc =~ s/G/G\/G/g;
-# 				$nuc =~ s/C/C\/C/g;
-# 				$nuc =~ s/W/A\/T/g;
-# 				$nuc =~ s/R/A\/G/g;
-# 				$nuc =~ s/M/A\/C/g;
-# 				$nuc =~ s/K/G\/T/g;
-# 				$nuc =~ s/Y/T\/C/g;
-# 				$nuc =~ s/S/C\/G/g;
-# 				$nuc =~ s/N/NA\/NA/g;
-# 				$nuc =~ s/-/NA\/NA/g;
-# 				push(@p1line, $nuc);
-# 			}
-# 			my $p1linestr = join(",", @p1line);
-# 			print P1DATA $p1linestr, "\n";
-#
-# 			#Write p2 file
-# 			my @p2line;
-# 			foreach my $ind (sort keys %{$pop2Ref}){
-# 				my $nuc = ${$pop2Ref->{$ind}}->[$loc];
-# 				$nuc =~ s/A/A\/A/g;
-# 				$nuc =~ s/T/T\/T/g;
-# 				$nuc =~ s/G/G\/G/g;
-# 				$nuc =~ s/C/C\/C/g;
-# 				$nuc =~ s/W/A\/T/g;
-# 				$nuc =~ s/R/A\/G/g;
-# 				$nuc =~ s/M/A\/C/g;
-# 				$nuc =~ s/K/G\/T/g;
-# 				$nuc =~ s/Y/T\/C/g;
-# 				$nuc =~ s/S/C\/G/g;
-# 				$nuc =~ s/N/NA\/NA/g;
-# 				$nuc =~ s/-/NA\/NA/g;
-# 				push(@p2line, $nuc);
-# 			}
-# 			my $p2linestr = join(",", @p2line);
-# 			print P2DATA $p2linestr, "\n";
-#
-# 			#Populate admix file
-# 			my @admixline;
-# 			foreach my $ind (sort keys %{$popaRef}){
-# 				my $nuc = ${$popaRef->{$ind}}->[$loc];
-# 				$nuc =~ s/A/A\/A/g;
-# 				$nuc =~ s/T/T\/T/g;
-# 				$nuc =~ s/G/G\/G/g;
-# 				$nuc =~ s/C/C\/C/g;
-# 				$nuc =~ s/W/A\/T/g;
-# 				$nuc =~ s/R/A\/G/g;
-# 				$nuc =~ s/M/A\/C/g;
-# 				$nuc =~ s/K/G\/T/g;
-# 				$nuc =~ s/Y/T\/C/g;
-# 				$nuc =~ s/S/C\/G/g;
-# 				$nuc =~ s/N/NA\/NA/g;
-# 				$nuc =~ s/-/NA\/NA/g;
-# 				push( @admixline, $nuc);
-# 			}
-# 			my $admixlinestr = join(",", @admixline);
-# 			print ADMIX $admixlinestr, "\n";
-# 		}
-# 	}
-# }
-#
-# if ($phyNew or $onlyPhy){
-# 	print("Writing new PHYLIP file <out.phy>\n");
-# 	open (PHY, "> out.phy");
-# 	my $locnum = 0;
-# 	my $indnum = 0;
-# 	for (my $loc = 0; $loc < $nchar; $loc++){
-# 		if(!exists $blacklist{$loc+1}){
-# 			$locnum++;
-# 		}
-# 	}
-# 	foreach my $ind (keys %{$pop1Ref}){
-# 		$indnum++;
-# 	}
-# 	foreach my $ind (keys %{$pop2Ref}){
-# 		$indnum++;
-# 	}
-# 	foreach my $ind (keys %{$popaRef}){
-# 		$indnum++;
-# 	}
-# 	print PHY $indnum, " ", $locnum, "\n";
-#
-# 	#print data for P1
-# 	foreach my $ind (sort keys %{$pop1Ref}){
-# 		#print $ind, "\n";
-# 		print PHY $ind, "\t";
-# 		for (my $l = 0; $l < $nchar; $l++){
-# 			if(!exists $blacklist{$l+1}){
-# 				print PHY ${$pop1Ref->{$ind}}->[$l];
-# 			}
-# 		}
-# 		print PHY "\n";
-# 	}
-# 	#exit;
-# 	foreach my $ind (sort keys %{$pop2Ref}){
-# 		print PHY $ind, "\t";
-# 		for (my $loc = 0; $loc < $nchar; $loc++){
-# 			#print $loc, " ";
-# 			if(!exists $blacklist{$loc+1}){
-# 				print PHY ${$pop2Ref->{$ind}}->[$loc];
-# 			}
-# 		}
-# 		print PHY "\n";
-# 	}
-# 	foreach my $ind (sort keys %{$popaRef}){
-# 		print PHY $ind, "\t";
-# 		for (my $loc = 0; $loc < $nchar; $loc++){
-# 			if(!exists $blacklist{$loc+1}){
-# 				print PHY ${$popaRef->{$ind}}->[$loc];
-# 			}
-# 		}
-# 		print PHY "\n";
-# 	}
-# 	close PHY;
-# }
-#
-# #if $rcall, print some stuff
-# if ($rcalls == 1){
-# 	print"Printing some population-wise R calls....\n";
-#
-# 	my %samples;
-#
-# 	foreach my $ind (keys %{$pop1Ref}){
-# 		if (!exists $samples{$assignRef->{$ind}}){
-# 			$samples{$assignRef->{$ind}} = [$ind];
-# 		}else{
-# 			push(@{$samples{$assignRef->{$ind}}}, $ind);
-# 		}
-# 	}
-# 	foreach my $ind (keys %{$pop2Ref}){
-# 		if (!exists $samples{$assignRef->{$ind}}){
-# 			$samples{$assignRef->{$ind}} = [$ind];
-# 		}else{
-# 			push(@{$samples{$assignRef->{$ind}}}, $ind);
-# 		}
-# 	}
-# 	foreach my $ind (keys %{$popaRef}){
-# 		if (!exists $samples{$assignRef->{$ind}}){
-# 			$samples{$assignRef->{$ind}} = [$ind];
-# 		}else{
-# 			push(@{$samples{$assignRef->{$ind}}}, $ind);
-# 		}
-# 	}
-#
-# 	foreach my $pop (keys %samples){
-# 		print "$pop<- genomic.clines(introgress.data=count.matrix, hi.index=hi.index.sim,loci.data=loci.data.sim,sig.test=T,classification=T, loci.touse=which(deltas>0.8), ind.touse=c(";
-# 		my $count = 0;
-# 		foreach my $assign (@{$samples{$pop}}){
-# 			if ($count == 0){
-# 				print "\"$assign\"";
-# 			}else{
-# 				print ", \"$assign\"";
-# 			}
-# 			$count++;
-# 		}
-# 		print "))\n";
-# 	}
-# 	print "\n";
-# }
-#
 
 
 exit 0;
@@ -541,52 +359,6 @@ sub removeColumns{
 
 
 
-# subroutine to print data out to a phylip file
-
-sub phyprint{
-
-  my( $out, $hashref ) = @_;
-
-  # get the number of sequences
-  my $seqs = scalar keys %$hashref;
-
-  # get the length of the alignment
-  my $alignlength;
-  foreach my $key( sort keys %{ $hashref } ){
-    $alignlength = length( ${$hashref}{$key} );
-  }
-
-  # get the length of the longest
-  my $keylength = 0;
-  foreach my $key( sort keys %{ $hashref } ){
-    my $temp = length( $key );
-    if( $temp > $keylength ){
-      $keylength = $temp;
-    }
-  }
-
-  # open the output file for printing
-  open( OUT, '>', $out ) or die "Can't open $out, d-bag: $!\n\n";
-
-  # print the first line to the phylip file
-  print OUT "$seqs $alignlength\n";
-
-  # print the hash
-  foreach my $key( sort keys %{ $hashref } ){
-    my $templength = length( $key );
-    my $whitespace = ( ( $keylength + 2 ) - $templength );
-    print OUT $key;
-    for( my $i=0; $i<$whitespace; $i++ ){
-      print OUT " ";
-    }
-    print OUT ${$hashref}{$key}, "\n";
-  }
-
-  # close the output file
-  close OUT;
-
-}
-
 sub calcMissingSep{
 
 	my( $hashref, $blacklistref ) = @_;
@@ -615,11 +387,11 @@ sub getBlacklistSep{
 	foreach my $pop (keys %{$popsRef}){
 		my %ncount;
 		my $inds;
-		foreach my $ind (keys %{$popAligns->{$pop}}){
+		foreach my $ind (keys %{$popsRef->{$pop}}){
 			$inds++;
 			$globalInds++;
 			my $counter = 0;
-			foreach my $locus ( @{$popAligns->{$pop}->{$ind}} ){
+			foreach my $locus ( @{$popsRef->{$pop}->{$ind}} ){
 				$counter++;
 				$ncount{$counter} = 0 unless exists $ncount{$counter};
 				$globalCount{$counter} = 0 unless exists $globalCount{$counter};
@@ -627,7 +399,7 @@ sub getBlacklistSep{
 					$ncount{$counter}++;
 					$globalCount{$counter}++;
 				}
-			} 
+			}
 			#blacklist any loci with too high n proportion (in THIS pop)
 			foreach my $loc(sort keys %ncount){
 				if (($ncount{$loc} / $inds) > $threshold){
@@ -659,19 +431,19 @@ sub getBlacklistGap{
 	foreach my $pop (keys %{$popsRef}){
 		my %ncount;
 		my $inds;
-		foreach my $ind (keys %{$popAligns->{$pop}}){
+		foreach my $ind (keys %{$popsRef->{$pop}}){
 			$inds++;
 			$globalInds++;
 			my $counter = 0;
-			foreach my $locus ( @{$popAligns->{$pop}->{$ind}} ){
+			foreach my $locus ( @{$popsRef->{$pop}->{$ind}} ){
 				$counter++;
 				$ncount{$counter} = 0 unless exists $ncount{$counter};
 				$globalCount{$counter} = 0 unless exists $globalCount{$counter};
-				if ($locus eq "N" || $locus ue "-"){
+				if ($locus eq "N" || $locus eq "-"){
 					$ncount{$counter}++;
 					$globalCount{$counter}++;
 				}
-			} 
+			}
 			#blacklist any loci with too high n proportion (in THIS pop)
 			foreach my $loc(sort keys %ncount){
 				if (($ncount{$loc} / $inds) > $threshold){
