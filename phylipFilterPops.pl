@@ -76,8 +76,8 @@ if ($skipMiss == 0){
 	print "Skipping calculation of missing data.\n";
 }
 
-print("Writing new PHYLIP file <out.phy>\n");
-open (PHY, "> out.phy");
+print("Writing new PHYLIP file <$out>\n");
+open (PHY, "> $out");
 my $locnum = 0;
 my $indnum = 0;
 for (my $loc = 0; $loc < $nchar; $loc++){
@@ -134,6 +134,7 @@ exit 0;
 	print "\t-N	: Proportion of globally missing data allowed per SNP (default=0.5)\n";
 	print "\t-g	: Toggle on to TURN OFF default behavior of treating gaps as missing data\n";
 	print "\t-s	: Skip calculating missing data, and just drop populations with too few inds\n";
+	print "\t-o	: Output file name\n";
 	print "\t-h	: Displays this help message\n";
 	print "\n\n";
 }
