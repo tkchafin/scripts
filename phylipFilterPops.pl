@@ -63,7 +63,7 @@ foreach my $p (keys %{$popAligns}){
 # foreach my $p (keys %{$popAligns}){
 # 	print $p, "\n";
 # }
-if ($skip == 0){
+if ($skipMiss == 0){
 	if ($gapFalse == 1){
 		&getBlacklistSep($popAligns, $threshold, $globalThresh, \%blacklist);
 	}else{
