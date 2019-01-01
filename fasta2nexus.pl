@@ -31,7 +31,7 @@ foreach my $file ( @input ){
 		my $name = "";
 		my $seq = "";
 
-    open ( FILE, "$file" ) || die "Do I need to call the short bus?\nCan't open $file: $!\n";
+    open ( FILE, "$file" ) || die "Error\nCan't open $file: $!\n";
 
 
 	while ( <FILE> ){
@@ -63,7 +63,7 @@ foreach my $file ( @input ){
 	$filepath =~ /(\w+)\.\w/;
 	my $ID = $1;
 
-    open( OUT, '>', "$dirpath$ID.nex" ) || die "Do I need to call the short bus?\nCan't write to $ID.nex\n";
+    open( OUT, '>', "$dirpath$ID.nex" ) || die "Error\nCan't write to $ID.nex\n";
          print OUT "#NEXUS\n\n";
          print OUT "BEGIN DATA;
 DIMENSIONS NTAX=$taxa NCHAR=$nchar;
@@ -97,7 +97,7 @@ Mandatory
 		'input|i=s{1,}'		=>	\@input,
 		);
 
-	@input or die "\n\nDo I need to call the short bus?: Input not specified!\n\n$usage\n";
+	@input or die "\n\nError: Input not specified!\n\n$usage\n";
 }
 
 #########################################################################
