@@ -74,7 +74,7 @@ Optional
 		'batch|b=i'		=>	\$batch,
 		);
 		
-	$input or die "\n\nDo I need to call the short bus?: Input not specified!\n\n$usage\n"; 
+	$input or die "\n\nError: Input not specified!\n\n$usage\n"; 
 	if ( $workdir eq ""){die "\nDerp: Working directory not specified!\n\n"}; 
 }
 
@@ -85,7 +85,7 @@ sub pyrad2fasta{
 		
 	# split at whitespace
     for my $element ( @loci ){
-		open( OUT, '>>', "$i.fasta" ) || die "Do I need to call the short bus?  Can't write to $i.fasta: $!\n\n";
+		open( OUT, '>>', "$i.fasta" ) || die "Error.  Can't write to $i.fasta: $!\n\n";
 		 @fasta = split( /\s+/, $element );
 		 print OUT $fasta[0], "\n";
 		 print OUT $fasta[1], "\n";
