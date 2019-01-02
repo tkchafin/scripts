@@ -6,6 +6,7 @@
 use strict;
 use warnings;
 use Getopt::Std;
+use List::Util qw(shuffle);
 
 #Die if no arguments given
 if( scalar( @ARGV ) == 0 ){
@@ -15,7 +16,7 @@ if( scalar( @ARGV ) == 0 ){
 
 #Parse arguments
 my %opts;
-getopts( 'p:i:o:hn:N:gPxrOm:s', \%opts );
+getopts( 'p:i:o:hn:N:gPxrOm:sr:w:R:P', \%opts );
 
 # kill if help option is true
 if( $opts{h} ){
@@ -24,8 +25,23 @@ if( $opts{h} ){
 }
 
 #get options
-my ($map, $phy, $out, $threshold, $globalThresh, $gapFalse, $minPop, $skipMiss) = &parseArgs(\%opts);
+my ($map, $phy, $out, $threshold, $globalThresh, $gapFalse, $minPop, $skipMiss, $randSample, $weightSample, $alleleSample, $poplabels) = &parseArgs(\%opts);
 
+
+#sanity check
+if ($weightSample && $randSample || $weightSample && $alleleSample || $alleleSample && $randSample){
+	die("-r, -R, and -w options cannot be combined\n")
+}
+
+if ($randSample){
+	print("Randomly sampling $randSample samples per population\n");
+}
+if ($weightSample){
+	print("Sampling $weightSample samples of highest coverage per population\n");
+}
+if ($alleleSample){
+	print("Randomly sampling $alleleSample alleles per population (not working yet)\n");
+}
 
 # hash of loci with too much missing data
 my %blacklist;
@@ -94,19 +110,70 @@ foreach my $pop (keys %{$popAligns}){
 
 print PHY $indnum, " ", $locnum, "\n";
 
-#print data for P1
+#Get missing data per sample if needed
+my %sampleCoverage;
+if ($weightSample){
+	%sampleCoverage = &getCoverage($popAligns);
+	# foreach my $ind (keys %sampleCoverage){
+	# 	print $ind, ": ", $sampleCoverage{$ind}, "\n";
+	# }
+	# exit()
+}
+
+
+#print data
 foreach my $pop (keys %{$popAligns}){
-	foreach my $ind (keys %{$popAligns->{$pop}}){
-		#print $ind, "\n";
-		print PHY $ind, "\t";
-		for (my $l = 0; $l < $nchar; $l++){
-			if(!exists $blacklist{$l+1}){
-				#print $pop, "\n";
-				#print @{$popAligns->{$pop}->{$ind}}[0], "\n";
-				print PHY ${$popAligns->{$pop}->{$ind}}[$l];
+	my $popCounter = 1;
+
+	#if random sample, randomly order keys to continue, and only choose X number
+	#if allele sample, grab all alleles and sample up to X non-N alleles
+	#if weight sample, order keys by completeness of sampling (%sampCoverage)
+
+	my @keys;
+	my $max;
+	if ($weightSample){
+		@keys = sort { $sampleCoverage{$a} <=> $sampleCoverage{$b} } keys %{$popAligns->{$pop}};
+		$max = $weightSample;
+	}elsif ($randSample){
+		@keys = shuffle (keys %{$popAligns->{$pop}});
+		$max = $randSample;
+	}else{
+		@keys = keys %{$popAligns->{$pop}};
+		$max = scalar(@keys);
+	}
+
+	#If not rand allele sampling, then sample based on the above order
+	if (!$alleleSample){
+		my $sampled = 0;
+		foreach my $ind (@keys){
+			$sampled++;
+			#print $ind, "\n";
+			my $name;
+			if ($poplabels){
+				if ($weightSample || $randSample){
+					if ($max > 1){
+						$name = $pop + "_" + $sampled;
+					}else{
+						$name = $pop;
+					}
+				}
+			}else{
+				$name = $ind;
+			}
+			print PHY $name, "\t";
+			for (my $l = 0; $l < $nchar; $l++){
+				if(!exists $blacklist{$l+1}){
+					#check if samples should be relabeled
+					#if -r, -R, or -w equal 1, don't append number
+					print PHY ${$popAligns->{$pop}->{$ind}}[$l];
+				}
+			}
+			print PHY "\n";
+			if ($sampled >= $max){
+				last;
 			}
 		}
-		print PHY "\n";
+		$popCounter++; #increment count per pop
 	}
 }
 
@@ -121,8 +188,8 @@ exit 0;
 
  sub help{
 
-	print "\nphylip2introgress.pl by Max Bangs, Tyler Chafin and Steve Mussmann\n";
-	print "\nThis script filters columns from Phylip file based on missing data per population\n";
+	print "\nphylipFilterPops.pl by Tyler Chafin, w/ contributions by Steve Mussmann and Max Bangs\n";
+	print "\nThis script filters rows and columns from a phylip file based on population assignments\n";
 	print "A population map should be given in a tab-delimited file, formatted as:\n";
 	print "\n\tSampleName\tPopID\n\n";
 	print "Where PopID can be a string or integer, and SampleName must exactly match a corresponsing line in the phylip file. Any samples not in the popmap will not be included in the output files.\n\n";
@@ -134,6 +201,10 @@ exit 0;
 	print "\t-N	: Proportion of globally missing data allowed per SNP (default=0.5)\n";
 	print "\t-g	: Toggle on to TURN OFF default behavior of treating gaps as missing data\n";
 	print "\t-s	: Skip calculating missing data, and just drop populations with too few inds\n";
+	print "\t-r	: Randomly sample up to <x> individuals from each population\n";
+	print "\t-w	: Sample up to <x> individuals from each population with the least missing data\n";
+	print "\t-R	: Randomly sample up to <x> ALLELES from each population (per column, for SNPs)\n";
+	print "\t-P	: Print samples using pop names (numbered as \"_x\" if more than 1 sample)\n";
 	print "\t-o	: Output file name\n";
 	print "\t-h	: Displays this help message\n";
 	print "\n\n";
@@ -157,8 +228,13 @@ sub parseArgs{
 	$opts{g} and $gapFalse = 1;
 	my $globalThresh = $opts{N} || 0.5;
   my $out = $opts{o} || "out.phy";
+	my $randSample = $opts{r} || 0;
+	my $weightSample = $opts{w} || 0;
+	my $alleleSample = $opts{R} || 0;
+	my $poplabels = 0;
+	$opts{P} and $poplabels = 1;
   #return
-  return ($map, $phy, $out, $threshold, $globalThresh, $gapFalse, $minPop, $skip);
+  return ($map, $phy, $out, $threshold, $globalThresh, $gapFalse, $minPop, $skip, $randSample, $weightSample, $alleleSample, $poplabels);
 }
 
 sub uniq {
@@ -386,6 +462,27 @@ sub calcMissingSep{
 	}
 }
 
+sub getCoverage{
+
+	my $popsRef = $_[0];
+	my %coverage;
+
+	foreach my $pop (keys %{$popsRef}){
+		foreach my $ind (keys %{$popsRef->{$pop}}){
+			my $totalcount = 0;
+			my $ncount = 0;
+			foreach my $locus ( @{$popsRef->{$pop}->{$ind}} ){
+				if ($locus eq "N"){
+					$ncount++;
+				}
+				$totalcount++;
+			}
+			$coverage{$ind} = ($ncount/$totalcount);
+		}
+	}
+	return(%coverage);
+}
+
 sub getBlacklistSep{
 
 	my( $popsRef, $thresh, $globalThresh, $blacklistref ) = @_;
@@ -410,14 +507,14 @@ sub getBlacklistSep{
 					$globalCount{$counter}++;
 				}
 			}
-			#blacklist any loci with too high n proportion (in THIS pop)
-			foreach my $loc(sort keys %ncount){
-				if (($ncount{$loc} / $inds) > $threshold){
-					$$blacklistref{$loc} = ($ncount{$loc} / $inds) unless exists $$blacklistref{$loc};
-					#print("Locus:",$loc," - Missing data: ",($ncount{$loc} / $inds), "\n");
-				}
-				#print("Nprop:",($ncount{$loc} / $inds), "\n");
+		}
+		#blacklist any loci with too high n proportion (in THIS pop)
+		foreach my $loc(sort keys %ncount){
+			if (($ncount{$loc} / $inds) > $threshold){
+				$$blacklistref{$loc} = ($ncount{$loc} / $inds) unless exists $$blacklistref{$loc};
+				#print("Locus:",$loc," - Failed (pop", $pop,"): ",($ncount{$loc} / $inds), "\n");
 			}
+			#print("Nprop:",($ncount{$loc} / $inds), "\n");
 		}
 	}
 
@@ -425,7 +522,7 @@ sub getBlacklistSep{
 	foreach my $loc(sort keys %globalCount){
 		if (($globalCount{$loc} / $globalInds) > $threshold){
 			$$blacklistref{$loc} = ($globalCount{$loc} / $globalInds) unless exists $$blacklistref{$loc};
-			#print("Locus:",$loc," - Missing data: ",($globalCount{$loc} / $globalInds), "\n");
+			#print("Locus:",$loc," - Failed (global): ",($globalCount{$loc} / $globalInds), "\n");
 		}
 	}
 }
@@ -442,6 +539,7 @@ sub getBlacklistGap{
 		my %ncount;
 		my $inds;
 		foreach my $ind (keys %{$popsRef->{$pop}}){
+			#print("Ind: ", $ind, "\n");
 			$inds++;
 			$globalInds++;
 			my $counter = 0;
@@ -454,14 +552,14 @@ sub getBlacklistGap{
 					$globalCount{$counter}++;
 				}
 			}
-			#blacklist any loci with too high n proportion (in THIS pop)
-			foreach my $loc(sort keys %ncount){
-				if (($ncount{$loc} / $inds) > $threshold){
-					$$blacklistref{$loc} = ($ncount{$loc} / $inds) unless exists $$blacklistref{$loc};
-					#print("Locus:",$loc," - Missing data: ",($ncount{$loc} / $inds), "\n");
-				}
-				#print("Nprop:",($ncount{$loc} / $inds), "\n");
+		}
+		#blacklist any loci with too high n proportion (in THIS pop)
+		foreach my $loc(sort keys %ncount){
+			if (($ncount{$loc} / $inds) > $threshold){
+				$$blacklistref{$loc} = ($ncount{$loc} / $inds) unless exists $$blacklistref{$loc};
+				#print("Locus:",$loc," - Failed (pop", $pop,"): ",($ncount{$loc} / $inds), "\n");
 			}
+			#print("Nprop:",($ncount{$loc} / $inds), "\n");
 		}
 	}
 
@@ -469,7 +567,7 @@ sub getBlacklistGap{
 	foreach my $loc(sort keys %globalCount){
 		if (($globalCount{$loc} / $globalInds) > $threshold){
 			$$blacklistref{$loc} = ($globalCount{$loc} / $globalInds) unless exists $$blacklistref{$loc};
-			#print("Locus:",$loc," - Missing data: ",($globalCount{$loc} / $globalInds), "\n");
+			#print("Locus:",$loc," - Failed (global): ",($globalCount{$loc} / $globalInds), "\n");
 		}
 	}
 
