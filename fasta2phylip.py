@@ -11,42 +11,45 @@ def main():
 
 	seqs = dict() #key=FASTA header; val=sequence
 
-	#Now, get the alignment from the FASTA file
-	#note that this works fine with interleaved FASTA
+	#read sequence in
 	if params.fasta:
 		print('Reading alignment from FASTA...')
 		for f in read_fasta(params.fasta):
-			seqs[f[0]] = list(f[1])
+			seqs[f[0]] = f[1]
 
+		print("Writing new PHYLIP file",params.out)
+		write_phylip(params.out, seqs)
+	elif params.phylip:
+		print('Reading alignment from PHYLIP...')
+		for f in read_phylip(params.phylip):
+			seqs[f[0]] = f[1]
 
-	#get indices of all multi-allele sites, then randomly resolve each
-	mults = ["R", "Y", "S", "W", "K", "M", "D", "H", "B", "V"]
-
-	for key in (seqs.keys()):
-		#get indices of multi-allelic sites
-		idxs = [i for i, c in enumerate(seqs[key]) if c.upper() in mults]
-
-		#loop through amiguities, replace each with a new one
-		for i in idxs:
-			#print(seqs[key][i], end=" - ")
-			seqs[key][i] = sampleAllele(seqs[key][i])
-			#print(seqs[key][i])
-
-	#write new FASTA outputs
-	for samp in seqs.keys():
-		seqs[samp] = "".join(seqs[samp])
-	if (params.split):
-		for samp in seqs.keys():
-			fname = samp + "_" + params.out
-			sd = dict()
-			sd[samp] = seqs[samp]
-			write_fasta(fname, sd)
-	else:
+		print("Writing new FASTA file",params.out)
 		write_fasta(params.out, seqs)
+
+
+
+#Print dict to phylip file
+def write_phylip(p, aln):
+	with open(p, 'w') as fh:
+		try:
+			header = getPhylipHeader(aln) + "\n"
+			fh.write(header)
+
+			for sample in aln.keys():
+				line = str(sample) + "\t" + "".join(aln[sample]) + "\n"
+				fh.write(line)
+		except IOError as e:
+			print("Could not read file %s: %s"%(p,e))
+			sys.exit(1)
+		except Exception as e:
+			print("Unexpected error reading file %s: %s"%(p,e))
+			sys.exit(1)
+		finally:
+			fh.close()
 
 #Function to write fasta-formatted sequences
 def write_fasta(f, aln):
-
 	with open(f, 'w') as fh:
 		try:
 			for samp in aln.keys():
@@ -61,35 +64,23 @@ def write_fasta(f, aln):
 		finally:
 			fh.close()
 
-#function to randomly sample an allele given an ambiguity code
-def sampleAllele(ch):
-	return(random.choice(get_iupac(ch.upper())))
-
-#Function to split character to IUPAC codes, assuing diploidy
-def get_iupac(char):
-	iupac = {
-		"A"	: ["A"],
-		"G"	: ["G"],
-		"C"	: ["C"],
-		"T"	: ["T"],
-		"N"	: ["N"],
-		"-"	: ["-"],
-		"R"	: ["A","G"],
-		"Y"	: ["C","T"],
-		"S"	: ["G","C"],
-		"W"	: ["A","T"],
-		"K"	: ["G","T"],
-		"M"	: ["A","C"],
-		"B"	: ["C","G","T"],
-		"D"	: ["A","G","T"],
-		"H"	: ["A","C","T"],
-		"V"	: ["A","C","G"]
-	}
-	return iupac[char]
-
-#function returns all indices
-def find(str, opts):
-	return [i for i, ltr in enumerate(s) if ltr == ch]
+#Returns header for Phylip file from a dictionary of samples w/ data
+def getPhylipHeader(d):
+	numSamp = 0
+	numLoci = None
+	for sample in d:
+		numSamp = numSamp + 1
+		if not numLoci:
+			numLoci = len(d[sample])
+		else:
+			if numLoci != len(d[sample]):
+				print("getPhylipHeader: Warning: Sequences of unequal length.")
+	header = str(numSamp) + " " + str(numLoci)
+	if numLoci == 0 or not numLoci:
+		print("getPhylipHeader: Warning: No loci in dictionary.")
+	if numSamp == 0:
+		print("getPhylipHeader: Warning: No samples in dictionary.")
+	return(header)
 
 #Read samples as FASTA. Generator function
 def read_fasta(fas):
@@ -126,22 +117,44 @@ def read_fasta(fas):
 	else:
 		raise FileNotFoundError("File %s not found!"%fas)
 
+#Read samples as PHYLIP. Generator function
+def read_phylip(phy):
+	if os.path.exists(phy):
+		with open(phy, 'r') as fh:
+			try:
+				num=0
+				for line in fh:
+					line = line.strip()
+					if not line:
+						continue
+					num += 1
+					if num == 1:
+						continue
+					arr = line.split()
+					yield(arr[0], arr[1])
+			except IOError:
+				print("Could not read file ",phy)
+				sys.exit(1)
+			finally:
+				fh.close()
+	else:
+		raise FileNotFoundError("File %s not found!"%phy)
 
 #Object to parse command-line arguments
 class parseArgs():
 	def __init__(self):
 		#Define options
 		try:
-			options, remainder = getopt.getopt(sys.argv[1:], 'f:so:h', \
-			["out=", "help", "fasta=", "split"])
+			options, remainder = getopt.getopt(sys.argv[1:], 'f:p:h', \
+			["help", "fasta=", "phy="])
 		except getopt.GetoptError as err:
 			print(err)
 			self.display_help("\nExiting because getopt returned non-zero exit status.")
 		#Default values for params
 		#Input params
 		self.fasta=None
+		self.phylip=None
 		self.out=None
-		self.split=False
 
 		#First pass to see if help menu was called
 		for o, a in options:
@@ -156,37 +169,39 @@ class parseArgs():
 			#print(opt,arg)
 			if opt =="f" or opt=="fasta":
 				self.fasta = arg
-			elif opt =="o" or opt=="out":
-				self.out = arg
-			elif opt == "s" or opt == "split":
-				self.split=True
+			elif opt =="p" or opt=="phy":
+				self.phylip = arg
 			elif opt =="h" or opt == "help":
 				pass
 			else:
 				assert False, "Unhandled option %r"%opt
 
 		#Check manditory options are set
-		if not self.fasta:
-			self.display_help("Must provide FASTA file <-f,--fasta>")
+		if not self.fasta and not self.phylip:
+			self.display_help("Must provide either a FASTA or PHYLIP file.")
+
+		if self.fasta and self.phylip:
+			self.display_help("Must provide either a FASTA or PHYLIP file.")
 
 		#get output prefix if not set by user
-		if not self.out:
-			self.out = os.path.splitext(self.fasta)[0] + '_hap.fasta'
+		if self.fasta:
+			self.out = os.path.splitext(self.fasta)[0] + '.phylip'
+		elif self.phylip:
+			self.out = os.path.splitext(self.phylip)[0] + '.fasta'
 
 	def display_help(self, message=None):
 		if message is not None:
 			print()
 			print (message)
-		print ("\npseudoHaploidize.py\n")
+		print ("\nfasta2phylip.py\n")
 		print ("Contact:Tyler K. Chafin, University of Arkansas,tkchafin@uark.edu")
-		print ("\nUsage: ", sys.argv[0], "-f <input.fasta> [-s] [-f example_hap]\n")
-		print ("Description: Creates a pseudo-haploid sequence from input fasta, randomly resolving heterozygous sites")
+		print ("\nUsage: ", sys.argv[0], "[-f <.fasta>] [-p <.phy>]\n")
+		print ("Description: Simple script to convert between FASTA and PHYLIP formats")
 
 		print("""
 	Arguments:
-		-f,--fasta	: Input fasta sequence
-		-s,--split	: [Boolean] Write outputs each to their own output file
-		-o,--out	: Output file name [default=input_hap.fasta or samp_input_hap.fasta if -s]
+		-f,--fasta	: Input FASTA to be converted to PHYLIP
+		-p,--phy	: Input PHYLIP to be converted to FASTA
 		-h,--help	: Displays help menu
 """)
 		print()
