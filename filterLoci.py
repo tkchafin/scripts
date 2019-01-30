@@ -328,7 +328,7 @@ class parseArgs():
 		try:
 			options, remainder = getopt.getopt(sys.argv[1:], 'i:s:p:ho:nflP:X:SRV:', \
 			["input=", "samples=", "pis=","help","out=", "nex", "fas", "loci",
-			"popmap=", "snaq", "exclude=","snaqR","snaqr", 'pomo'])
+			"popmap=", "snaq", "exclude=","snaqR","snaqr", 'pomo', 'concatFas'])
 		except getopt.GetoptError as err:
 			print(err)
 			self.display_help("\nExiting because getopt returned non-zero exit status.")
@@ -342,6 +342,7 @@ class parseArgs():
 
 		self.nex=False
 		self.fas=False
+		self.concatFas=False
 		self.loci=False
 
 		self.snaq=False
@@ -387,6 +388,8 @@ class parseArgs():
 				self.popmap=arg
 			elif opt in ('V', 'pomo'):
 				self.pomo=int(arg)
+			elif opt == "concatFas":
+				self.concatFas=True
 			else:
 				assert False, "Unhandled option %r"%opt
 
@@ -428,6 +431,7 @@ class parseArgs():
 		-n,--nex	: Boolean. Write loci as individual NEXUS files [false]
 		-f,--fas	: Boolean. Write loci as individual FASTA files [false]
 		-l,--loci	: Boolean. Write loci as new .loci file [false]
+		--concatFas	: Write concatenated Fasta output
 		-o,--out	: Output file prefix
 
 		PRESETS

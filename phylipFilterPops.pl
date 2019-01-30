@@ -108,6 +108,27 @@ foreach my $pop (keys %{$popAligns}){
 	}
 }
 
+sub min{
+	if ($_[0] > $_[1]){
+		return ($_[1]);
+	}else{
+		return($_[0])
+	}
+}
+
+$indnum = 0;
+foreach my $pop (keys %{$popAligns}){
+	my $p = scalar(keys %{$popAligns});
+	if ($weightSample){
+		$indnum += min($weightSample, $p);
+	}elsif ($randSample){
+		$indnum += min($randSample, $p);
+	}elsif ($alleleSample){
+		$indnum += min($alleleSample, $p);
+	}else{
+		$indnum += $p;
+	}
+}
 print PHY $indnum, " ", $locnum, "\n";
 
 #Get missing data per sample if needed
