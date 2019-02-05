@@ -45,7 +45,10 @@ def main():
 					line = line.strip()
 					if not line:
 						continue
-					if line[0] == ">":
+					if line and \
+                    (line[0].isalpha() or \
+                    line[0].isdigit() or \
+                    line[0] == ">"):
 						allLoci.append(line)
 						stuff = line.split()
 						identifier = stuff[0].replace(">", "")
