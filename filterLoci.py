@@ -45,10 +45,16 @@ def main():
 					line = line.strip()
 					if not line:
 						continue
-					if line[0] == ">":
+					if line and \
+					(line[0].isalpha() or \
+					line[0].isdigit() or \
+					line[0] == ">"):
 						allLoci.append(line)
 						stuff = line.split()
-						identifier = stuff[0].replace(">", "")
+						if line[0] == ">":
+							identifier = stuff[0].replace(">", "")
+						else:
+							identifier = stuff[0]
 						seqs = stuff[1]
 						aln_d[identifier] = seqs
 						#print(len(seqs))
@@ -188,8 +194,11 @@ def getBestIndLoci(infile, popmap, thresh):
 				line = line.strip()
 				if not line:
 					continue
-				if line[0] == ">":
-					line = line.replace(">","")
+				if line[0] == ">" or \
+				line[0].isalpha() or \
+				line[0].isdigit():
+					if line[0] == ">":
+						line = line.replace(">","")
 					stuff = line.split()
 					identifier = stuff[0].replace(" ", "")
 					seen.append(identifier)
@@ -448,4 +457,4 @@ class parseArgs():
 
 #Call main function
 if __name__ == '__main__':
-    main()
+	main()
