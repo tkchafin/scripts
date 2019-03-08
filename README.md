@@ -49,13 +49,15 @@ batchBUCKY.pl		: Pipeline for running BUCKy. Old and probably broken.
 collapse_baits.py	: For filtering baits by SNP count from BaitsTools output
 collapseHaps.pl		: Collapse sequences to redundant consensus sequences
 compare2seqs.pl		: This was a learning exercise. Just compares sequences.
+concatFasta.py		: Script to concatenate fastas (No help menu- use argv)
 condenseAlleles.pl	: Creates a consensus of alleles (input as FASTA) per individual
 count_residues.pl	: Counts residues in an amino acid alignment
 fast2distruct.pl	: Tries to parse FastStructure ouputs to create DISTRUCT input
 fasta2length.pl		: Calculate non-gap character length of sequences
 fasta2nexus.pl		: Converts FASTA to NEXUS format
 fasta2phylip.py		: Converts from FASTA to PHYLIP and PHYLIP to FASTA, nothing fancy
-findBreaksVCF.py:	: Breaks contigs in VCF to chunks of X parsimony-informative SNPs, for running MDL
+findBreaksVCF.py	: Breaks contigs in VCF to chunks of X parsimony-informative SNPs, for running MDL
+fill_quartets.py	: Sorts through TICR output to find missed quartets (for debugging only) (no help menu - use argv)
 filter_loci.pl		: Parses a directory of FASTA alignments, and blacklists those with too low alignment coverage
 filterLoci.py		: Filters a pyRAD .loci file on individual coverage and number of parsimony-informative sites
 fixedSNP.pl		: Parses PHYLIP file to find differentially fixed SNPs between two given populations
