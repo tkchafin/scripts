@@ -16,7 +16,7 @@ if( scalar( @ARGV ) == 0 ){
 
 #Parse arguments
 my %opts;
-getopts( 'p:i:1:2:sn:N:gPo:hmb', \%opts );
+getopts( 'p:i:1:2:sn:N:gPo:hSO:', \%opts );
 
 # kill if help option is true
 if( $opts{h} ){
@@ -25,7 +25,7 @@ if( $opts{h} ){
 }
 
 #get options
-my ($map, $phy, $pop1, $pop2, $threshold, $globalThresh, $gapFalse, $phyNew, $out, $same, $mono, $bi) = &parseArgs(\%opts);
+my ($map, $phy, $pop1, $pop2, $threshold, $globalThresh, $gapFalse, $phyNew, $out, $same, $skip, $prefix) = &parseArgs(\%opts);
 
 #Extract pops into an array
 my @pop1list = split(/\+/,$pop1);
@@ -46,7 +46,7 @@ my ($allRef, $ntax, $nchar) = &parsePhylip($phy);
 #Print argument report
 print "\nPopmap file is: $map\n";
 print "Phylip file is: $phy\n";
-if (scalar @pop2list > 0){
+if (scalar @pop2list <= 0){
 	print "Selected populations (1 pop model): $a1\n";
 }else{
 	print "Selected populations (2 pop model): $a1 and $a2\n";
@@ -111,7 +111,11 @@ if ($phyNew){
 	#print data for P1
 	foreach my $ind (sort keys %{$pop1Ref}){
 		#print $ind, "\n";
-		print PHY "Pop1_",$ind, "\t";
+		if ($skip == 1){
+			print PHY $ind, "\t";
+		}else{
+			print PHY "$prefix","Pop1_",$ind, "\t";
+		}
 		for (my $l = 0; $l < $nchar; $l++){
 			if(!exists $blacklist{$l+1}){
 				print PHY ${$pop1Ref->{$ind}}->[$l];
@@ -123,10 +127,14 @@ if ($phyNew){
 		#print data for P1
 		foreach my $ind (sort keys %{$pop2Ref}){
 			#print $ind, "\n";
-			if ($same == 1){
-				print PHY "Pop1-",$ind, "\t";
+			if ($skip == 1){
+				print PHY $ind, "\t";
 			}else{
-				print PHY "Pop2-",$ind, "\t";
+				if ($same == 1){
+					print PHY "$prefix","Pop1-",$ind, "\t";
+				}else{
+					print PHY "$prefix","Pop2-",$ind, "\t";
+				}
 			}
 			for (my $l = 0; $l < $nchar; $l++){
 				if(!exists $blacklist{$l+1}){
@@ -143,15 +151,50 @@ my $outnex = $out . ".nex";
 print("Writing new NEXUS file $outnex\n");
 open( OUT, '>', $outnex ) || die "Error\nCan't write to $outnex\n";		
 print OUT "#NEXUS\n\n";    
-print OUT "BEGIN DATA;
-DIMENSIONS NTAX=$indnum NCHAR=$locnum;
-FORMAT DATATYPE=DNA MISSING=? GAP=-;
 
-MATRIX\n";
+# print OUT "BEGIN TAXA;\n";
+# print OUT "DIMENSIONS NTAX=$indnum;\n\n";
+# print OUT "TAXLABELS\n";
+# foreach my $ind (sort keys %{$pop1Ref}){
+# 	#print $ind, "\n";
+# 	if ($skip == 1){
+# 		print OUT "    $ind";
+# 	}else{
+# 		print OUT "    Pop1_$ind";
+# 	}
+# 	print OUT "\n";
+# }
+# if (scalar @pop2list > 0){
+# 	#print data for P1
+# 	foreach my $ind (sort keys %{$pop2Ref}){
+# 		#print $ind, "\n";
+# 		if ($skip == 1){
+# 			print OUT "    $ind";
+# 		}else{
+# 			if ($same == 1){
+# 				print OUT "    Pop1_$ind";
+# 			}else{
+# 				print OUT "    Pop2_$ind";
+# 			}
+# 		}
+# 		print OUT "\n";
+# 	}
+# }
+# print OUT ";\nEND;\n\n";
+
+print OUT "BEGIN DATA;
+    DIMENSIONS NTAX=$indnum NCHAR=$locnum;
+    FORMAT DATATYPE=DNA MISSING=? GAP=- INTERLEAVE=NO;
+
+    MATRIX\n\n";
 #print data for P1
 foreach my $ind (sort keys %{$pop1Ref}){
 	#print $ind, "\n";
-	print OUT "Pop1-",$ind, "\t";
+	if ($skip == 1){
+		print OUT "    $ind    ";
+	}else{
+		print OUT "    ",$prefix,"Pop1_$ind    ";
+	}
 	for (my $l = 0; $l < $nchar; $l++){
 		if(!exists $blacklist{$l+1}){
 			if (${$pop1Ref->{$ind}}->[$l] eq "N"){
@@ -167,10 +210,14 @@ if (scalar @pop2list > 0){
 	#print data for P1
 	foreach my $ind (sort keys %{$pop2Ref}){
 		#print $ind, "\n";
-		if ($same == 1){
-			print OUT "Pop1-",$ind, "\t";
+		if ($skip == 1){
+			print OUT "    $ind    ";
 		}else{
-			print OUT "Pop2-",$ind, "\t";
+			if ($same == 1){
+				print OUT "    ",$prefix,"Pop1_$ind    ";;
+			}else{
+				print OUT "    ",$prefix,"Pop2_$ind    ";;
+			}
 		}
 		for (my $l = 0; $l < $nchar; $l++){
 			if(!exists $blacklist{$l+1}){
@@ -206,11 +253,14 @@ exit 0;
 	print "\t-1	: Identifier for populations to include in output (include multiple as: pop1+pop2)\n";
 	print "\t-2	: Identifier for populations to include in output, if using a 2-pop comparison\n";
 	print "\t-s	: Toggle on to use the same population identifier for all output individuals.\n";
+	print "\t-S	: Toggle on to skip adding population identifiers\n";
 	print "\t-i	: Path to input file (phylip)\n";
 	print "\t-n	: Proportion missing data allowed per pop per column (default=0.1)\n";
 	print "\t-N	: Proportion missing data allowed globally per column (default=0.1)\n";
 	print "\t-g	: Toggle on to TURN OFF default behavior of treating gaps as missing data\n";
 	print "\t-P	: Toggle on to output a new phylip file with the filtered data. [default=off]\n";
+	print "\t-O	: Output prefix for taxon population labels. [default=\"\"]\n";
+	print "\t\t--Inds will be labeles as: <prefix>Pop1_Ind1, <prefix>Pop1_Ind2, etc...\n";
 	print "\t-o	: Output prefix [default = \"ee_out\"]\n";
 	print "\t-h	: Displays this help message\n";
 	print "\n\n";
@@ -239,10 +289,13 @@ sub parseArgs{
 	$opts{g} and $gapFalse = 1;
 	$opts{P} and $phyNew = 1;
   my $out = $opts{o} || "ee_out";
+	my $prefix = $opts{O} || "";
 	my $same = 0;
+	my $skip = 0; 
 	$opts{s} and $same = 1;
+	$opts{S} and $skip = 1;
   #return
-  return ($map, $phy, $pops1, $pops2, $threshold, $globalThresh, $gapFalse, $phyNew, $out, $same, $mono, $bi);
+  return ($map, $phy, $pops1, $pops2, $threshold, $globalThresh, $gapFalse, $phyNew, $out, $same, $skip, $prefix);
 }
 
 #parse popmap file
