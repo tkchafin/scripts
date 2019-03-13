@@ -16,7 +16,7 @@ if( scalar( @ARGV ) == 0 ){
 
 #Parse arguments
 my %opts;
-getopts( 'p:i:1:2:sn:N:gPo:h', \%opts );
+getopts( 'p:i:1:2:sn:N:gPo:hmb', \%opts );
 
 # kill if help option is true
 if( $opts{h} ){
@@ -25,7 +25,7 @@ if( $opts{h} ){
 }
 
 #get options
-my ($map, $phy, $pop1, $pop2, $threshold, $globalThresh, $gapFalse, $phyNew, $out, $same) = &parseArgs(\%opts);
+my ($map, $phy, $pop1, $pop2, $threshold, $globalThresh, $gapFalse, $phyNew, $out, $same, $mono, $bi) = &parseArgs(\%opts);
 
 #Extract pops into an array
 my @pop1list = split(/\+/,$pop1);
@@ -72,6 +72,7 @@ my $nFail = (keys %blacklist);
 print($nFail ," loci had greater than ",$threshold, " missing data. Removing them.\n");
 #print Dumper(\%blacklist);
 
+
 #Check if pops contain data
 my $num1 = keys %{$pop1Ref};
 my $num2 = keys %{$pop2Ref};
@@ -102,8 +103,9 @@ foreach my $ind (keys %{$pop2Ref}){
 }
 
 if ($phyNew){
-	print("Writing new PHYLIP file <out.phy>\n");
-	open (PHY, "> out.phy");
+	my $outphy = $out . ".phy";
+	print("Writing new PHYLIP file $outphy\n");
+	open (PHY, ">", $outphy);
 	print PHY $indnum, " ", $locnum, "\n";
 
 	#print data for P1
@@ -119,12 +121,16 @@ if ($phyNew){
 	}
 	if (scalar @pop2list > 0){
 		#print data for P1
-		foreach my $ind (sort keys %{$pop1Ref}){
+		foreach my $ind (sort keys %{$pop2Ref}){
 			#print $ind, "\n";
-			print PHY "Pop1_",$ind, "\t";
+			if ($same == 1){
+				print PHY "Pop1-",$ind, "\t";
+			}else{
+				print PHY "Pop2-",$ind, "\t";
+			}
 			for (my $l = 0; $l < $nchar; $l++){
 				if(!exists $blacklist{$l+1}){
-					print PHY ${$pop1Ref->{$ind}}->[$l];
+					print PHY ${$pop2Ref->{$ind}}->[$l];
 				}
 			}
 			print PHY "\n";
@@ -133,7 +139,57 @@ if ($phyNew){
 	close PHY;
 }
 
+my $outnex = $out . ".nex";
+print("Writing new NEXUS file $outnex\n");
+open( OUT, '>', $outnex ) || die "Error\nCan't write to $outnex\n";		
+print OUT "#NEXUS\n\n";    
+print OUT "BEGIN DATA;
+DIMENSIONS NTAX=$indnum NCHAR=$locnum;
+FORMAT DATATYPE=DNA MISSING=? GAP=-;
 
+MATRIX\n";
+#print data for P1
+foreach my $ind (sort keys %{$pop1Ref}){
+	#print $ind, "\n";
+	print OUT "Pop1-",$ind, "\t";
+	for (my $l = 0; $l < $nchar; $l++){
+		if(!exists $blacklist{$l+1}){
+			if (${$pop1Ref->{$ind}}->[$l] eq "N"){
+				print OUT "?";
+			}else{
+				print OUT ${$pop1Ref->{$ind}}->[$l];
+			}
+		}
+	}
+	print OUT "\n";
+}
+if (scalar @pop2list > 0){
+	#print data for P1
+	foreach my $ind (sort keys %{$pop2Ref}){
+		#print $ind, "\n";
+		if ($same == 1){
+			print OUT "Pop1-",$ind, "\t";
+		}else{
+			print OUT "Pop2-",$ind, "\t";
+		}
+		for (my $l = 0; $l < $nchar; $l++){
+			if(!exists $blacklist{$l+1}){
+				if (${$pop2Ref->{$ind}}->[$l] eq "N"){
+					print OUT "?";
+				}else{
+					print OUT ${$pop2Ref->{$ind}}->[$l];
+				}
+			}
+		}
+		print OUT "\n";
+	}
+}
+
+print OUT ";\n";
+
+print OUT "END;\n\n";
+	
+close OUT; 	
 exit 0;
 
  ########################### SUBROUTINES ###############################
@@ -152,7 +208,7 @@ exit 0;
 	print "\t-s	: Toggle on to use the same population identifier for all output individuals.\n";
 	print "\t-i	: Path to input file (phylip)\n";
 	print "\t-n	: Proportion missing data allowed per pop per column (default=0.1)\n";
-	print "\t-n	: Proportion missing data allowed globally per column (default=0.1)\n";
+	print "\t-N	: Proportion missing data allowed globally per column (default=0.1)\n";
 	print "\t-g	: Toggle on to TURN OFF default behavior of treating gaps as missing data\n";
 	print "\t-P	: Toggle on to output a new phylip file with the filtered data. [default=off]\n";
 	print "\t-o	: Output prefix [default = \"ee_out\"]\n";
@@ -176,13 +232,17 @@ sub parseArgs{
 	my $globalThresh = $opts{N} || 0.1;
 	my $gapFalse = 0;
 	my $phyNew = 0;
+	my $mono = 0;
+	$opts{m} and $mono = 1; 
+	my $bi = 0; 
+	$opts{b} and $bi = 1;
 	$opts{g} and $gapFalse = 1;
 	$opts{P} and $phyNew = 1;
   my $out = $opts{o} || "ee_out";
 	my $same = 0;
 	$opts{s} and $same = 1;
   #return
-  return ($map, $phy, $pops1, $pops2, $threshold, $globalThresh, $gapFalse, $phyNew, $out, $same);
+  return ($map, $phy, $pops1, $pops2, $threshold, $globalThresh, $gapFalse, $phyNew, $out, $same, $mono, $bi);
 }
 
 #parse popmap file
@@ -412,7 +472,7 @@ sub phyprint{
   }
 
   # open the output file for printing
-  open( OUT, '>', $out ) or die "Can't open $out, d-bag: $!\n\n";
+  open( OUT, '>', $out ) or die "Can't open $out: $!\n\n";
 
   # print the first line to the phylip file
   print OUT "$seqs $alignlength\n";
@@ -450,7 +510,7 @@ sub calcMissing{
 	}
 }
 
-sub getBlacklistGap{
+sub getBlacklist{
 
 	my( $thresh, $p2, $blacklistref, $p1ref, $p2ref) = @_;
 
@@ -581,3 +641,4 @@ sub getBlacklistGap{
 		}
 	}
 }
+
