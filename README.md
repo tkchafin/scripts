@@ -71,6 +71,7 @@ nremover.pl		: My version of Steve Mussmann's nremover script, for filtering DNA
 parallelMB.pl		: For running batches of MrBayes on a cluster, in parallel per locus
 phylip2bgc.pl		: Converts PHYLIP alignment to inputs for BGC (inference of Bayesian Genomic CLines)
 phylip2biNumNex.py	: Converts PHYLIP to bi-allelic numerically coded NEXUS for PhyloNet's MLE_BiMarkers
+phylip2ecoevolity.pl	: Converts PHYLIP to the NEXUS format needed for ecoevolity.
 phylip2introgress.pl	: Converts PHYLIP to inputs for R package INTROGRESS (introgession analyses)
 phylip2newhybrids.pl	: Creates inputs for NewHybrids, with missing data filters built in
 phylip2nexus.pl		: Converts PHYLIP to NEXUS
