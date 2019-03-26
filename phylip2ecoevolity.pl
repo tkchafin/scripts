@@ -7,6 +7,7 @@ use strict;
 use warnings;
 use Getopt::Std;
 use Data::Dumper;
+use List::Util 'shuffle';
 
 #Die if no arguments given
 if( scalar( @ARGV ) == 0 ){
@@ -16,7 +17,7 @@ if( scalar( @ARGV ) == 0 ){
 
 #Parse arguments
 my %opts;
-getopts( 'p:i:1:2:sn:N:gPo:hSO:', \%opts );
+getopts( 'p:i:1:2:sn:N:gPo:hSO:r:', \%opts );
 
 # kill if help option is true
 if( $opts{h} ){
@@ -25,7 +26,7 @@ if( $opts{h} ){
 }
 
 #get options
-my ($map, $phy, $pop1, $pop2, $threshold, $globalThresh, $gapFalse, $phyNew, $out, $same, $skip, $prefix) = &parseArgs(\%opts);
+my ($map, $phy, $pop1, $pop2, $threshold, $globalThresh, $gapFalse, $phyNew, $out, $same, $skip, $prefix, $randind) = &parseArgs(\%opts);
 
 #Extract pops into an array
 my @pop1list = split(/\+/,$pop1);
@@ -52,13 +53,18 @@ if (scalar @pop2list <= 0){
 	print "Selected populations (2 pop model): $a1 and $a2\n";
 }
 print "Total taxa in phylip file: $ntax\n";
-print "Total characters in phylip data matrix: $nchar\n\n";
+print "Total characters in phylip data matrix: $nchar\n";
+
+if ($randind > 0){
+	print "Subsampling a total of $randind individuals per population.\n";
+}
+print "\n";
 
 #Get pop alignments only with ind as key and array of seqs as value
-my $pop1Ref = &getMultPops($assignRef, $allRef, \@pop1list);
+my $pop1Ref = &getMultPops($assignRef, $allRef, $randind, \@pop1list);
 my $pop2Ref = "";
 if (scalar @pop2list > 0){
-	$pop2Ref = &getMultPops($assignRef, $allRef, \@pop2list);
+	$pop2Ref = &getMultPops($assignRef, $allRef, $randind, \@pop2list);
 }
 # calculate missing data in admixed population
 #&calcMissing($popaRef, \%blacklist);
@@ -261,6 +267,8 @@ exit 0;
 	print "\t-P	: Toggle on to output a new phylip file with the filtered data. [default=off]\n";
 	print "\t-O	: Output prefix for taxon population labels. [default=\"\"]\n";
 	print "\t\t--Inds will be labeles as: <prefix>Pop1_Ind1, <prefix>Pop1_Ind2, etc...\n";
+	print "\t-r	: Random sample n individuals per population.\n";
+	print "\t\t--Note this referes to the aggregated population provided for each of <-1> or <-2>\n";
 	print "\t-o	: Output prefix [default = \"ee_out\"]\n";
 	print "\t-h	: Displays this help message\n";
 	print "\n\n";
@@ -292,10 +300,11 @@ sub parseArgs{
 	my $prefix = $opts{O} || "";
 	my $same = 0;
 	my $skip = 0; 
+	my $randind = $opts{r} || 0;
 	$opts{s} and $same = 1;
 	$opts{S} and $skip = 1;
   #return
-  return ($map, $phy, $pops1, $pops2, $threshold, $globalThresh, $gapFalse, $phyNew, $out, $same, $skip, $prefix);
+  return ($map, $phy, $pops1, $pops2, $threshold, $globalThresh, $gapFalse, $phyNew, $out, $same, $skip, $prefix, $randind);
 }
 
 #parse popmap file
@@ -391,19 +400,23 @@ sub getMultPops{
 
 	my $popRef 		= $_[0];
 	my $seqRef 		= $_[1];
-	my $toGetRef 	= $_[2];
+	my $sample		= $_[2];
+	my $toGetRef 	= $_[3];
 
 	my %pop;
+	my $selected = 0;
 
-	foreach my $id (@{$toGetRef}){
-		foreach my $key (keys %{$popRef}){
-			#If pop ID matches, get sequence
-			if ($popRef->{$key} eq $id){
-				if (exists $seqRef->{$key}){
-					${$pop{$key}} = $seqRef->{$key};
-				}else{
-					print "Warning: Sample <$key> was not found in sequence file. Skipping.\n";
+	foreach my $key (shuffle keys %{$popRef}){
+		#If pop ID matches, get sequence
+		if (grep( /^$popRef->{$key}$/, @{$toGetRef})){
+			if (exists $seqRef->{$key}){
+				${$pop{$key}} = $seqRef->{$key};
+				$selected++;
+				if ($sample > 0 && $selected >= $sample){
+					return(\%pop);
 				}
+			}else{
+				print "Warning: Sample <$key> was not found in sequence file. Skipping.\n";
 			}
 		}
 	}
