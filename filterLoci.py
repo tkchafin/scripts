@@ -40,6 +40,7 @@ def main():
 				if params.pomo:
 					print("USING POMO PRESET. ONLY LOCI WITH AT LEAST 1 SAMPLE PER POP WILL BE KEPT")
 
+				passing=dict()
 
 				for line in fh:
 					line = line.strip()
@@ -69,34 +70,39 @@ def main():
 							passed += 1
 							#Write to desired location
 							if params.fas:
-								f = str(params.out) + "_" + str(locNum) + ".fasta"
-								writeFasta(aln_d, f)
+								#f = str(params.out) + "_" + str(locNum) + ".fasta"
+								#writeFasta(aln_d, f)
+								passing[locNum]=aln_d
 
 							if params.nex:
 								n = str(params.out) + "_" + str(locNum) + ".nex"
 								if params.snaq:
 									aln_new = sampledSnaq(aln_d,bestInds)
 									if aln_new:
-										dict2nexus(n, aln_new)
+										#dict2nexus(n, aln_new)
+										passing[locNum]=aln_d
 									else:
 										snaqFail+=1
 										passed -= 1
 								elif params.snaqr:
 									aln_new = randomSnaq(aln_d,pop_assign)
 									if aln_new:
-										dict2nexus(n, aln_new)
+										#dict2nexus(n, aln_new)
+										passing[locNum]=aln_d
 									else:
 										snaqFail+=1
 										passed -= 1
 								elif params.pomo:
 									aln_new = sampledPop(aln_d, pop_assign, params.pomo)
 									if aln_new:
-										dict2nexus(n, aln_new)
+										#dict2nexus(n, aln_new)
+										passing[locNum]=aln_d
 									else:
 										snaqFail+=1
 										passed -= 1
 								else:
-									dict2nexus(n, aln_d)
+									passing[locNum]=aln_d
+									#dict2nexus(n, aln_d)
 							numSamp=0
 							numPIS=0
 						else:
@@ -115,14 +121,38 @@ def main():
 			finally:
 				fh.close()
 
-		if params.loci:
-			l = str(params.out) + "_filtered.loci"
-			writeStuff(allLoci, l)
+		# if params.loci:
+		# 	l = str(params.out) + "_filtered.loci"
+		# 	writeStuff(allLoci, l)
 		print("Number of loci passing filters: %s (of %s total)" %(passed, locNum))
 		print("\t",sampFail,"loci failed for too few individuals.")
 		print("\t",varsFail,"loci failed for too few parsimony-informative sites\n")
 		if params.snaq or params.snaqr:
 			print("\t",snaqFail,"loci failed SNAQ-sampling\n")
+		
+		if params.rand:
+			print("Randomly sampling",params.rand,"passing loci...")
+			stuff = list(passing.keys())
+			random.shuffle(stuff)
+			max = params.rand
+			new = dict()
+			count = 0
+			for key in stuff:
+				if count >= max:
+					break
+				new[key] = passing[key]
+				count += 1
+			passing = new
+				
+		if params.fas:
+			for aln in passing:
+				f = str(params.out) + "_" + str(aln) + ".fasta"
+				writeFasta(passing[aln], f)
+		if params.nex:
+			for aln in passing:
+				n = str(params.out) + "_" + str(locNum) + ".nex"
+				dict2nexus(n, passing[aln])
+				
 
 	else:
 		print("No input provided.")
@@ -335,9 +365,9 @@ class parseArgs():
 	def __init__(self):
 		#Define options
 		try:
-			options, remainder = getopt.getopt(sys.argv[1:], 'i:s:p:ho:nflP:X:SRV:', \
+			options, remainder = getopt.getopt(sys.argv[1:], 'i:s:p:ho:nflP:X:SRV:r:', \
 			["input=", "samples=", "pis=","help","out=", "nex", "fas", "loci",
-			"popmap=", "snaq", "exclude=","snaqR","snaqr", 'pomo', 'concatFas'])
+			"popmap=", "snaq", "exclude=","snaqR","snaqr", 'pomo', 'concatFas', "rand="])
 		except getopt.GetoptError as err:
 			print(err)
 			self.display_help("\nExiting because getopt returned non-zero exit status.")
@@ -353,6 +383,7 @@ class parseArgs():
 		self.fas=False
 		self.concatFas=False
 		self.loci=False
+		self.rand=None
 
 		self.snaq=False
 		self.snaqr=False
@@ -385,13 +416,15 @@ class parseArgs():
 				self.nex=True
 			elif opt in ('f', 'fas'):
 				self.fas=True
-			elif opt in ('l', 'loci'):
+			elif opt == 'l' or opt == 'loci':
 				self.loci=True
-			elif opt in ('S','snaq'):
+			elif opt == 'S' or opt == 'snaq':
 				self.snaq=True
-			elif opt in ('R','snaqr', "snaqR"):
+			elif opt =='r' or opt == 'rand':
+				self.rand=int(arg)
+			elif opt == 'R' or opt == 'snaqr' or opt == 'snaqR':
 				self.snaqr=True
-			elif opt in ('X','exclude'):
+			elif opt == 'X' or opt == 'exclude':
 				self.exclude=arg.split(",")
 			elif opt in ('P','popmap'):
 				self.popmap=arg
@@ -439,8 +472,7 @@ class parseArgs():
 		-p,--pis	: Minimum number of parsimony-informative sites [def=1]
 		-n,--nex	: Boolean. Write loci as individual NEXUS files [false]
 		-f,--fas	: Boolean. Write loci as individual FASTA files [false]
-		-l,--loci	: Boolean. Write loci as new .loci file [false]
-		--concatFas	: Write concatenated Fasta output
+		-r,--rand	: Sample <x> random passing loci 
 		-o,--out	: Output file prefix
 
 		PRESETS
