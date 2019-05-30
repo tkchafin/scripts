@@ -95,5 +95,6 @@ sumls.sh		: A bash alias for doing something with ls
 summaryGFF.pl		: Something old and incomplete.
 treeExpansion.py	: Converts a Newick tree of clade names, expanded to all taxa in given tab-delimited file
 trimFastq.pl		: Perl script for end-trimming FASTQ reads
+utm2latlong.py		: Converts UTM to and from latitude and longitudes
 vcf2phylip.py		: VCF to PHYLIP
 ```
