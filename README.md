@@ -50,6 +50,7 @@ collapse_baits.py	: For filtering baits by SNP count from BaitsTools output
 collapseHaps.pl		: Collapse sequences to redundant consensus sequences
 compare2seqs.pl		: This was a learning exercise. Just compares sequences.
 concatFasta.py		: Script to concatenate fastas (No help menu- use argv)
+concatenateNexus.py	: Concatenate Nexus alignments and calculate partitions block
 condenseAlleles.pl	: Creates a consensus of alleles (input as FASTA) per individual
 count_residues.pl	: Counts residues in an amino acid alignment
 fast2distruct.pl	: Tries to parse FastStructure ouputs to create DISTRUCT input
