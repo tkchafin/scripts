@@ -102,7 +102,7 @@ def main():
 										passed -= 1
 								else:
 									passing[locNum]=aln_d
-									#dict2nexus(n, aln_d)
+									dict2nexus(n, aln_d)
 							numSamp=0
 							numPIS=0
 						else:
@@ -144,14 +144,15 @@ def main():
 				count += 1
 			passing = new
 				
-		if params.fas:
-			for aln in passing:
-				f = str(params.out) + "_" + str(aln) + ".fasta"
-				writeFasta(passing[aln], f)
-		if params.nex:
-			for aln in passing:
-				n = str(params.out) + "_" + str(locNum) + ".nex"
-				dict2nexus(n, passing[aln])
+			if params.fas:
+				for aln in passing:
+					f = str(params.out) + "_" + str(aln) + ".fasta"
+					writeFasta(passing[aln], f)
+			if params.nex:
+				for aln in passing:
+					#print("Writing",n)
+					n = str(params.out) + "_" + str(locNum) + ".nex"
+					dict2nexus(n, passing[aln])
 				
 
 	else:
