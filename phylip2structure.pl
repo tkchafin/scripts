@@ -15,6 +15,7 @@ my $extra;
 my $locnames=0;
 my $popN = 1.0;
 my $globalN = 1.0;
+my $oneLine =0;
 #Call sub parseArgs to parse command-line arguments
 parseArgs();
 
@@ -150,9 +151,17 @@ while ( my $line = <PHY> ){
 		    $line_1 .= "-9\t";
 		}
 		if ($second_line{ uc $seq_array[$i] }){
-		    $line_2 .= "$second_line{ uc $seq_array[$i] }\t";
+		    if ($oneLine == 0){
+		        $line_2 .= "$second_line{ uc $seq_array[$i] }\t";
+		    }else{
+			$line_1 .= "$second_line{ uc $seq_array[$i] }\t";
+		    }
 		}else{
-		    $line_2 .= "-9\t";
+		    if ($oneLine==0){
+		   	$line_2 .= "-9\t";
+		    }else{
+			$line_1 .= "-9\t";
+		    }
 		}
 
 	}
@@ -160,8 +169,12 @@ while ( my $line = <PHY> ){
 	chop $line_1;
 	chop $line_2;
 
-	print OUTFILE $line_1, "\n";
-	print OUTFILE $line_2, "\n";
+        if ($oneLine==0){
+	    print OUTFILE $line_1, "\n";
+	    print OUTFILE $line_2, "\n";
+	}else{
+	    print OUTFILE $line_1, "\n";
+	}
 	$samplecount++;
 
 }
@@ -198,6 +211,7 @@ Required Inputs
 			NOTE: N filters not implemented yet.
 
 Optional inputs
+	--oneLine	- Print phased alleles on one line
 	-l, --loc	-  Bool, switch on printing of locus names in first row
 	-e, --extra	-  Number of extra columns to insert
 	-m, --missing	-  Desired code for missing data [Default is \"-9\"]
@@ -218,6 +232,7 @@ NOTE: Both gaps and N\'s will be coded as missing data.\n\n";
 	'quiet|q!'	=> \$suppress,
 	'popN|n'	=> \$popN,
 	'globalN|N' => \$globalN,
+	'oneLine!' => \$oneLine
 	);
 
 	$help == 1 and die "$usage";
