@@ -63,7 +63,7 @@ my %enum;
 my %popcodes;
 if ($popmap){
     open ( POPMAP, $popmap) || die "Derp: Can't open $popmap: $!";
-    my $popcount = 0;
+    my $popcount = 1;
     while (<POPMAP>){
         chomp;
         my @c = split /\s+/, $_;
@@ -181,7 +181,7 @@ while ( my $line = <PHY> ){
 
 close PHY;
 close OUTFILE;
-print ("Done! Outputted ", $samplecount, " samples and ", $snpcount, " SNPs.\n");
+print ("Done! Outputted ", $samplecount, " samples and ", $snpcount+1, " SNPs.\n");
 exit;
 
 ############################SUBROUTINES######################################
