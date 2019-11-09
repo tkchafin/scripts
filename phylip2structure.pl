@@ -94,6 +94,10 @@ open ( PHY, $input ) || die "Can't open $input: $!";
 
 my $samplecount = 0;
 my $snpcount = 0;
+
+#data structure to hold it, so we can print in order
+my %structure;
+
 while ( my $line = <PHY> ){
 	$count++;
 	$count == 1 and next; #Test if $count=1, if so then skip to next iteration
@@ -117,9 +121,11 @@ while ( my $line = <PHY> ){
 	#Begin building structure lines
 	my $line_1 = "$b[0]\t";#Put in sequence name
 	my $line_2 = "$b[0]\t";
+	my $pop;
 
 	if ($popmap){
 		if (exists $popmap{$b[0]}){
+			$pop = $popmap{$b[0]};
 			#Add pop codes
 			$line_1 .= "$popmap{$b[0]}\t";
 			$line_2 .= "$popmap{$b[0]}\t";
@@ -169,14 +175,28 @@ while ( my $line = <PHY> ){
 	chop $line_1;
 	chop $line_2;
 
-        if ($oneLine==0){
-	    print OUTFILE $line_1, "\n";
-	    print OUTFILE $line_2, "\n";
+	if (not exists $structure{$pop}){
+		$structure{$pop} = [];
+	}
+
+	if ($oneLine==0){
+		#print OUTFILE $line_1, "\n";
+		#print OUTFILE $line_2, "\n";
+		push $structure{$pop}, [$line_1, $line_2]
 	}else{
-	    print OUTFILE $line_1, "\n";
+		push $structure{$pop}, [$line_1]
+		#print OUTFILE $line_1, "\n";
 	}
 	$samplecount++;
 
+}
+
+foreach my $pop_key (sort {$a <=> $b} keys %structure) {
+	foreach my $sample (@{$structure{$pop_key}}){
+		foreach my $line (@{$sample}){
+			print OUTFILE $line, "\n"
+		}
+	}
 }
 
 close PHY;
