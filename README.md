@@ -63,6 +63,7 @@ filter_loci.pl		: Parses a directory of FASTA alignments, and blacklists those w
 filterLoci.py		: Filters a pyRAD .loci file on individual coverage and number of parsimony-informative sites
 fixedSNP.pl		: Parses PHYLIP file to find differentially fixed SNPs between two given populations
 genesFromGFF.pl		: Extracts elements from a FASTA file, given a GFF file of annotations
+liftoverCoords.py	: Converts coordinates between assemblies (e.g. CanFam2 to CanFam3) and makes MareyMap inputs
 makeHyde.py		: Makes inputs for HyDe- Hybrid Detection program
 makePopArt.py		: Python program to make inputs for PopArt (haplotype network program) from FASTA
 makeSAMOVA.pl		: Makes inputs for SAMOVA given FASTA and coordinates, with automatic clustering by distance
