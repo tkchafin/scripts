@@ -2,7 +2,7 @@
 
 import sys
 import os
-
+import getopt
 
 def main():
 	params = parseArgs()
