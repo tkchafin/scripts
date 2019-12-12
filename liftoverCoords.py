@@ -19,7 +19,7 @@ def main():
 			def convert(row):
 				name="chr"+row[params.chrom]
 				ret=lo.convert_coordinate(name, row[params.bp])
-				return(float(ret[0][1]))
+				return(int(ret[0][1]))
 				
 			tab[params.ocol] = tab.apply(convert,axis = 1)
 			print("Writing the output table:")
