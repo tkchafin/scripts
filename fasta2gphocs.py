@@ -39,6 +39,8 @@ def main():
 	print("Total alignments passing filtering:",locnum)
 	
 	ofh=open(params.out, "w")
+	header=str(locnum)+"\n"
+	ofh.write(header)
 	ofh.write(contents)
 	ofh.close()
 
