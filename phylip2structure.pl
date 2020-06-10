@@ -182,9 +182,9 @@ while ( my $line = <PHY> ){
 	if ($oneLine==0){
 		#print OUTFILE $line_1, "\n";
 		#print OUTFILE $line_2, "\n";
-		push $structure{$pop}, [$line_1, $line_2]
+		push @{ $structure{$pop} }, [$line_1, $line_2];
 	}else{
-		push $structure{$pop}, [$line_1]
+		push @{ $structure{$pop} }, [$line_1];
 		#print OUTFILE $line_1, "\n";
 	}
 	$samplecount++;
@@ -194,7 +194,7 @@ while ( my $line = <PHY> ){
 foreach my $pop_key (sort {$a <=> $b} keys %structure) {
 	foreach my $sample (@{$structure{$pop_key}}){
 		foreach my $line (@{$sample}){
-			print OUTFILE $line, "\n"
+			print OUTFILE $line, "\n";
 		}
 	}
 }
