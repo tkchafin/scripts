@@ -16,7 +16,7 @@ if( scalar( @ARGV ) == 0 ){
 
 #Parse arguments
 my %opts;
-getopts( 'p:i:1:2:a:o:hn:N:gPxrO', \%opts );
+getopts( 'p:i:1:2:a:o:hn:N:gPxrOd:', \%opts );
 
 # kill if help option is true
 if( $opts{h} ){
@@ -25,7 +25,7 @@ if( $opts{h} ){
 }
 
 #get options
-my ($map, $phy, $p1, $p2, $ad, $out, $threshold, $globalThresh, $gapFalse, $phyNew, $onlyPhy, $rcalls, $order) = &parseArgs(\%opts);
+my ($map, $phy, $p1, $p2, $ad, $out, $threshold, $globalThresh, $gapFalse, $phyNew, $onlyPhy, $rcalls, $order, $delta) = &parseArgs(\%opts);
 
 #Extract pops into an array
 my @pop1 = split(/\+/,$p1);
@@ -61,15 +61,29 @@ my $popaRef = &getMultPops($assignRef, $allRef, \@popA);
 
 # calculate missing data in admixed population
 #&calcMissing($popaRef, \%blacklist);
-if ($gapFalse == 1){
-	&getBlacklist($threshold, $globalThresh, $pop1Ref, $pop2Ref, $popaRef, \%blacklist);
-}else{
-	&getBlacklistGap($threshold, $globalThresh, $pop1Ref, $pop2Ref, $popaRef, \%blacklist);
-}
+#gapFalse = 1 only count Ns; otherwise count gaps
+&getBlacklist($threshold, $globalThresh, $pop1Ref, $pop2Ref, $popaRef, $nchar, $gapFalse, \%blacklist);
+
 my $nFail = (keys %blacklist);
 
 print($nFail ," loci had greater than ",$threshold, " missing data. Removing them.\n");
 #print Dumper(\%blacklist);
+
+if ($delta > 0.0){
+	&getDeltaBlacklist($delta, $pop1Ref, $pop2Ref, $nchar, \%blacklist);
+	my $nDelt = (keys %blacklist);
+	my $diff = $nDelt - $nFail;
+	print($diff ," loci had delta less than ",$delta, ". Removing them.\n");
+}
+
+$nFail = (keys %blacklist);
+if ($nFail >= $nchar){
+	print("Oh no! All loci failed filtering! Try different values of -n, -N, or -d!\n");
+	exit;
+}else{
+	my $nPass = $nchar - $nFail;
+	print($nPass, " loci passed filtering!\n")
+}
 
 #Check if pops contain data
 my $num1 = keys %{$pop1Ref};
@@ -97,7 +111,7 @@ if ($onlyPhy != 1){
 
 	#Print loci.txt file
 	print LOCI "locus,type\n";
-	for my $nloci (1 .. $nchar){
+	for my $nloci (0 .. $nchar-1){
 		if(!exists $blacklist{$nloci}){
 			print LOCI "loci$nloci,C\n";
 		}
@@ -130,7 +144,7 @@ if ($onlyPhy != 1){
 
 	#format and print files for introgress
 	for (my $loc = 0; $loc < $nchar; $loc++){
-		if(!exists $blacklist{$loc+1}){
+		if(!exists $blacklist{$loc}){
 			#write p1 file
 			my @p1line;
 			foreach my $ind (sort keys %{$pop1Ref}){
@@ -210,7 +224,7 @@ if ($phyNew or $onlyPhy){
 	my $locnum = 0;
 	my $indnum = 0;
 	for (my $loc = 0; $loc < $nchar; $loc++){
-		if(!exists $blacklist{$loc+1}){
+		if(!exists $blacklist{$loc}){
 			$locnum++;
 		}
 	}
@@ -230,7 +244,7 @@ if ($phyNew or $onlyPhy){
 		#print $ind, "\n";
 		print PHY $ind, "\t";
 		for (my $l = 0; $l < $nchar; $l++){
-			if(!exists $blacklist{$l+1}){
+			if(!exists $blacklist{$l}){
 				print PHY ${$pop1Ref->{$ind}}->[$l];
 			}
 		}
@@ -241,7 +255,7 @@ if ($phyNew or $onlyPhy){
 		print PHY $ind, "\t";
 		for (my $loc = 0; $loc < $nchar; $loc++){
 			#print $loc, " ";
-			if(!exists $blacklist{$loc+1}){
+			if(!exists $blacklist{$loc}){
 				print PHY ${$pop2Ref->{$ind}}->[$loc];
 			}
 		}
@@ -250,7 +264,7 @@ if ($phyNew or $onlyPhy){
 	foreach my $ind (sort keys %{$popaRef}){
 		print PHY $ind, "\t";
 		for (my $loc = 0; $loc < $nchar; $loc++){
-			if(!exists $blacklist{$loc+1}){
+			if(!exists $blacklist{$loc}){
 				print PHY ${$popaRef->{$ind}}->[$loc];
 			}
 		}
@@ -328,6 +342,8 @@ exit 0;
 	print "\t-P	: Toggle on to output a new phylip file with the filtered data. [default=off]\n";
 	print "\t-x	: Toggle on to ONLY print a new phylip file (e.g. no INTROGRESS files)\n";
 	print "\t-r	: Toggle on to print a file with population-wise genomic.clines calls\n";
+	print "\t-d	: Delta threshold to retain a locus [Default=0.0]\n";
+	print "\t(Delta = sigma(|fi1 - fi2|/2) where fi1=freq of ith allele in pop 1; Gregorius & Roberds 1986)\n";
 	print "\t-O	: Toggle on to print a file of pop assignments for ADMIX pops <pop_order_admix.txt>\n";
 	print "\t-h	: Displays this help message\n";
 	print "\n\n";
@@ -358,8 +374,9 @@ sub parseArgs{
 	$opts{r} and $r = 1;
 	my $ord = 0;
 	$opts{O} and $ord = 1;
+	my $del = $opts{d} || 0.0;
   #return
-  return ($map, $phy, $p1, $p2, $ad, $out, $threshold, $globalThresh, $gapFalse, $phyNew, $onlyPhy, $r, $ord);
+  return ($map, $phy, $p1, $p2, $ad, $out, $threshold, $globalThresh, $gapFalse, $phyNew, $onlyPhy, $r, $ord, $del);
 }
 
 #parse popmap file
@@ -419,7 +436,7 @@ sub parsePhylip{
 	  #ignore if blank
       if( $line =~ /^\w/ ){
         my @temp = split( /\s+/, $line);
-        my @arr = split(//, $temp[1]);
+        my @arr = split(//, uc($temp[1]));
         #push array ref into our hash
         $toReturn{$temp[0]} = \@arr;
       }
@@ -627,98 +644,79 @@ sub calcMissing{
 	}
 }
 
-sub getBlacklist{
+sub getDeltaBlacklist{
+	my ( $delta_thresh, $p1ref, $p2ref, $locnum, $blacklistref ) = @_;
+	print "Delta threshold is: $delta_thresh\n";
+	for my $loc (0 .. $nchar-1){
+		#skip if locus already in blacklist
+		
+		if(!exists $blacklistref->{$loc}){
+			#print("Locus $loc\n");
+			my %p1counts = (
+				"A" => 0,
+				"T" => 0,
+				"G" => 0,
+				"C" => 0
+			);
+			my %p2counts = (
+				"A" => 0,
+				"T" => 0,
+				"G" => 0,
+				"C" => 0
+			);
+			my $p1inds = 0;
+			#get allele counts for p1 and p2 pops
+			foreach my $ind( sort keys %$p1ref ){
+				my $nuc = ${$$p1ref{$ind}}->[$loc];
+				#print("$nuc\n");
+				if ($nuc eq "A") { $p1counts{"A"} += 2;$p1inds++;} #allele count ONLY counts acceptable diploid genotypes
+				elsif ($nuc eq "T") { $p1counts{"T"} += 2;$p1inds++;}
+				elsif ($nuc eq  "C") { $p1counts{"C"} += 2;$p1inds++;}
+				elsif ($nuc eq  "G") { $p1counts{"G"} += 2;$p1inds++;}
+				elsif ($nuc eq  "R") { $p1counts{"A"}++; $p1counts{"G"}++;$p1inds++;}
+				elsif ($nuc eq  "Y") { $p1counts{"C"}++; $p1counts{"T"}++;$p1inds++;}
+				elsif ($nuc eq  "S") { $p1counts{"G"}++; $p1counts{"C"}++;$p1inds++;}
+				elsif ($nuc eq  "W") { $p1counts{"A"}++; $p1counts{"T"}++;$p1inds++;}
+				elsif ($nuc eq  "K") { $p1counts{"G"}++; $p1counts{"T"}++;$p1inds++;}
+				elsif ($nuc eq  "M") { $p1counts{"C"}++; $p1counts{"A"}++;$p1inds++;}
+			}
+			my $p2inds=0;
+			foreach my $ind( sort keys %$p2ref ){
+				my $nuc = ${$$p2ref{$ind}}->[$loc];
+				#print("$nuc\n");
+				if ($nuc eq "A") { $p2counts{"A"} += 2;$p2inds++;}
+				elsif ($nuc eq "T") { $p2counts{"T"} += 2;$p2inds++;}
+				elsif ($nuc eq  "C") { $p2counts{"C"} += 2;$p2inds++;}
+				elsif ($nuc eq  "G") { $p2counts{"G"} += 2;$p2inds++;}
+				elsif ($nuc eq  "R") { $p2counts{"A"}++; $p2counts{"G"}++;$p2inds++;}
+				elsif ($nuc eq  "Y") { $p2counts{"C"}++; $p2counts{"T"}++;$p2inds++;}
+				elsif ($nuc eq  "S") { $p2counts{"G"}++; $p2counts{"C"}++;$p2inds++;}
+				elsif ($nuc eq  "W") { $p2counts{"A"}++; $p2counts{"T"}++;$p2inds++;}
+				elsif ($nuc eq  "K") { $p2counts{"G"}++; $p2counts{"T"}++;$p2inds++;}
+				elsif ($nuc eq "M") { $p2counts{"C"}++; $p2counts{"A"}++;$p2inds++;}
+			}
+			#exit;
+			my $delta = 0.0;
+			foreach my $key( sort keys %p1counts ){
+				my $p1_freq = $p1counts{$key}/($p1inds*2); #allele count / 2N
+				my $p2_freq = $p2counts{$key}/($p2inds*2);
+				my $diff = abs($p1_freq - $p2_freq) / 2.0;
 
-	my( $thresh, $globalThresh, $p1ref, $p2ref, $admixref, $blacklistref ) = @_;
-
-	my $globalInds = 0;
-	my %globalCount;
-
-	#Check loci in pop1
-	my %ncount;
-	my $p1inds;
-	foreach my $ind( sort keys %$p1ref ){
-		$p1inds++;
-		$globalInds++;
-		my $counter = 0;
-		foreach my $locus( @${$$p1ref{$ind}} ){
-			$counter++;
-			$ncount{$counter} = 0 unless exists $ncount{$counter};
-			$globalCount{$counter} = 0 unless exists $globalCount{$counter};
-			if($locus eq "N"){
-				$ncount{$counter}++;
-				$globalCount{$counter}++;
+				$delta += $diff;
+			}
+			if ($delta <= $delta_thresh){
+				#print("Delta:$delta\n");
+				$$blacklistref{$loc} = "delta" unless exists $$blacklistref{$loc};
+				#print("Locus:",$loc," - Missing data: ",($n2count{$loc} / $p2inds), "\n");
 			}
 		}
 	}
-	#blacklist any loci with too high n proportion
-	foreach my $loc(sort keys %ncount){
-		if (($ncount{$loc} / $p1inds) > $threshold){
-			$$blacklistref{$loc} = ($ncount{$loc} / $p1inds) unless exists $$blacklistref{$loc};
-			#print("Locus:",$loc," - Missing data: ",($ncount{$loc} / $p1inds), "\n");
-		}
-		#print("Nprop:",($ncount{$loc} / $p1inds), "\n");
-	}
-	#check loci in pop2
-	my %n2count;
-	my $p2inds;
-	foreach my $ind( sort keys %$p2ref ){
-		$p2inds++;
-		$globalInds++;
-		my $counter = 0;
-		foreach my $locus( @${$$p2ref{$ind}} ){
-			$counter++;
-			$n2count{$counter} = 0 unless exists $n2count{$counter};
-			if($locus eq "N"){
-				$n2count{$counter}++;
-				$globalCount{$counter}++;
-			}
-		}
-	}
-	#blacklist any loci with too high n proportion
-	foreach my $loc(sort keys %ncount){
-		if (($n2count{$loc} / $p2inds) > $threshold){
-			$$blacklistref{$loc} = ($n2count{$loc} / $p2inds) unless exists $$blacklistref{$loc};
-			#print("Locus:",$loc," - Missing data: ",($n2count{$loc} / $p2inds), "\n");
-		}
-		#print("Nprop:",($n2count{$loc} / $p2inds), "\n");
-	}
-	#check loci in admixed
-	my %nAcount;
-	my $admixinds;
-	foreach my $ind( sort keys %$admixref ){
-		$admixinds++;
-		$globalInds++;
-		my $counter = 0;
-		foreach my $locus( @${$$admixref{$ind}} ){
-			$counter++;
-			$nAcount{$counter} = 0 unless exists $nAcount{$counter};
-			if($locus eq "N"){
-				$nAcount{$counter}++;
-				$globalCount{$counter}++;
-			}
-		}
-	}
-	#blacklist any loci with too high n proportion
-	foreach my $loc(sort keys %ncount){
-		if (($nAcount{$loc} / $admixinds) > $threshold){
-			$$blacklistref{$loc} = ($nAcount{$loc} / $admixinds) unless exists $$blacklistref{$loc};
-			#print("Locus:",$loc," - Missing data: ",($nAcount{$loc} / $admixinds), "\n");
-		}
-	}
-
-	#Blacklist loci with globally too high missing data
-	foreach my $loc(sort keys %globalCount){
-		if (($globalCount{$loc} / $globalInds) > $threshold){
-			$$blacklistref{$loc} = ($globalCount{$loc} / $globalInds) unless exists $$blacklistref{$loc};
-			#print("Locus:",$loc," - Missing data: ",($nAcount{$loc} / $admixinds), "\n");
-		}
-	}
+	#exit;
 }
 
-sub getBlacklistGap{
+sub getBlacklist{
 
-	my( $thresh, $globalThresh, $p1ref, $p2ref, $admixref, $blacklistref ) = @_;
+	my( $thresh, $globalThresh, $p1ref, $p2ref, $admixref, $nchar, $gap, $blacklistref ) = @_;
 
 	my $globalInds = 0;
 	my %globalCount;
@@ -729,20 +727,30 @@ sub getBlacklistGap{
 	foreach my $ind( sort keys %$p1ref ){
 		$p1inds++;
 		$globalInds++;
-		my $counter = 0;
-		foreach my $locus( @${$$p1ref{$ind}} ){
-			$counter++;
-			$ncount{$counter} = 0 unless exists $ncount{$counter};
-			$globalCount{$counter} = 0 unless exists $globalCount{$counter};
-			if($locus eq "N" || $locus eq "-"){
-				$ncount{$counter}++;
-				$globalCount{$counter}++;
+		for my $loc (0 .. $nchar-1){
+			my $nuc = ${$$p1ref{$ind}}->[$loc];
+			$ncount{$loc} = 0 unless exists $ncount{$loc};
+			$globalCount{$loc} = 0 unless exists $globalCount{$loc};
+			if($gap==1 and $nuc eq "N"){
+				$ncount{$loc}++;
+				$globalCount{$loc}++;
+			}
+			if($gap==0){
+				if($nuc eq "N" or $nuc eq "-"){
+					$ncount{$loc}++;
+					$globalCount{$loc}++;
+				}
 			}
 		}
 	}
 	#blacklist any loci with too high n proportion
 	foreach my $loc(sort keys %ncount){
 		if (($ncount{$loc} / $p1inds) > $threshold){
+			#print("$loc: $ncount{$loc}\n");
+			foreach my $ind( sort keys %$p1ref ){
+				my $nuc = ${$$p1ref{$ind}}->[$loc];
+				#print("$nuc\n");
+			}
 			$$blacklistref{$loc} = ($ncount{$loc} / $p1inds) unless exists $$blacklistref{$loc};
 			#print("Locus:",$loc," - Missing data: ",($ncount{$loc} / $p1inds), "\n");
 		}
@@ -754,13 +762,19 @@ sub getBlacklistGap{
 	foreach my $ind( sort keys %$p2ref ){
 		$p2inds++;
 		$globalInds++;
-		my $counter = 0;
-		foreach my $locus( @${$$p2ref{$ind}} ){
-			$counter++;
-			$n2count{$counter} = 0 unless exists $n2count{$counter};
-			if($locus eq "N" || $locus eq "-"){
-				$n2count{$counter}++;
-				$globalCount{$counter}++;
+		for my $loc (0 .. $nchar-1){
+			my $nuc = ${$$p2ref{$ind}}->[$loc];
+			$n2count{$loc} = 0 unless exists $n2count{$loc};
+			$globalCount{$loc} = 0 unless exists $globalCount{$loc};
+			if($gap==1 and $nuc eq "N"){
+				$n2count{$loc}++;
+				$globalCount{$loc}++;
+			}
+			if($gap==0){
+				if($nuc eq "N" or $nuc eq "-"){
+					$n2count{$loc}++;
+					$globalCount{$loc}++;
+				}
 			}
 		}
 	}
@@ -778,13 +792,21 @@ sub getBlacklistGap{
 	foreach my $ind( sort keys %$admixref ){
 		$admixinds++;
 		$globalInds++;
-		my $counter = 0;
-		foreach my $locus( @${$$admixref{$ind}} ){
-			$counter++;
-			$nAcount{$counter} = 0 unless exists $nAcount{$counter};
-			if($locus eq "N" || $locus eq "-"){
-				$nAcount{$counter}++;
-				$globalCount{$counter}++;
+		#print("$ind\n");
+		for my $loc (0 .. $nchar-1){
+			my $nuc = ${$$admixref{$ind}}->[$loc];
+			#print("$nuc\n");
+			$nAcount{$loc} = 0 unless exists $nAcount{$loc};
+			$globalCount{$loc} = 0 unless exists $globalCount{$loc};
+			if($gap==1 and $nuc eq "N"){
+				$nAcount{$loc}++;
+				$globalCount{$loc}++;
+			}
+			if($gap==0){
+				if($nuc eq "N" or $nuc eq "-"){
+					$nAcount{$loc}++;
+					$globalCount{$loc}++;
+				}
 			}
 		}
 	}
