@@ -131,7 +131,7 @@ if ($onlyPhy != 1){
 	if ($order == 1){
 		open (ORDER, ">pop_order_admix.txt");
 		foreach my $adInd (sort keys %{$popaRef}){
-			print ORDER ($assignRef->{$adInd}, "\n");
+			print ORDER $adInd, "\t", ($assignRef->{$adInd}, "\n");
 		}
 		close(ORDER)
 	}

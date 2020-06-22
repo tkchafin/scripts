@@ -79,87 +79,148 @@ if ($num1< 1){
 
 
 #Open filestreams
-open(ADMIX, "> admix.txt");
-open(P1DATA, "> p1in.txt");
-open(P2DATA, "> p2in.txt");
+open(ADMIX, "> bgc_admix.txt");
+open(P1DATA, "> bgc_p1in.txt");
+open(P2DATA, "> bgc_p2in.txt");
 
-#format and print files for bgc
+#for each locus
 for (my $loc = 0; $loc < $nchar; $loc++){
 	
-	#write p1 file
-	my $pop = 0;
-	print P1DATA "locus ",$loc, "\n";
+	#get p1 counts
+	
+	my %p1counts = (
+		"A" => 0,
+		"T" => 0,
+		"G" => 0,
+		"C" => 0
+	);
 	foreach my $id (@pop1){
 		foreach my $ind (keys %{$pop1Ref}){
 			if ($assignRef->{$ind} eq $id){
 				my $nuc = ${$pop1Ref->{$ind}}->[$loc];	
-				$nuc =~ s/A/1	1/gi;
-				$nuc =~ s/T/2	2/gi;
-				$nuc =~ s/G/3	3/gi;
-				$nuc =~ s/C/4	4/gi;
-				$nuc =~ s/W/1	2/gi;
-				$nuc =~ s/R/1	3/gi;
-				$nuc =~ s/M/1	4/gi;
-				$nuc =~ s/K/3	2/gi;
-				$nuc =~ s/Y/2	4/gi;
-				$nuc =~ s/S/3	4/gi;
-				$nuc =~ s/-/-9	-9/gi;
-				$nuc =~ s/N/-9	-9/gi;
-				print P1DATA $nuc, "\n";
+				if ($nuc eq "A") { $p1counts{"A"} += 2;} #allele count ONLY counts acceptable diploid genotypes
+				elsif ($nuc eq "T") { $p1counts{"T"} += 2;}
+				elsif ($nuc eq  "C") { $p1counts{"C"} += 2;}
+				elsif ($nuc eq  "G") { $p1counts{"G"} += 2;}
+				elsif ($nuc eq  "R") { $p1counts{"A"}++; $p1counts{"G"}++;}
+				elsif ($nuc eq  "Y") { $p1counts{"C"}++; $p1counts{"T"}++;}
+				elsif ($nuc eq  "S") { $p1counts{"G"}++; $p1counts{"C"}++;}
+				elsif ($nuc eq  "W") { $p1counts{"A"}++; $p1counts{"T"}++;}
+				elsif ($nuc eq  "K") { $p1counts{"G"}++; $p1counts{"T"}++;}
+				elsif ($nuc eq  "M") { $p1counts{"C"}++; $p1counts{"A"}++;}
 			}	
 		}
-		$pop++;
 	}
 
-
-	#Write p2 file
-	$pop = 0;
-	print P2DATA "locus ",$loc, "\n";
+	#get p2 counts
+	my %p2counts = (
+		"A" => 0,
+		"T" => 0,
+		"G" => 0,
+		"C" => 0
+	);
 	foreach my $id (@pop2){
 		foreach my $ind (keys %{$pop2Ref}){
 			if ($assignRef->{$ind} eq $id){
 				my $nuc = ${$pop2Ref->{$ind}}->[$loc];	
-				$nuc =~ s/A/1	1/gi;
-				$nuc =~ s/T/2	2/gi;
-				$nuc =~ s/G/3	3/gi;
-				$nuc =~ s/C/4	4/gi;
-				$nuc =~ s/W/1	2/gi;
-				$nuc =~ s/R/1	3/gi;
-				$nuc =~ s/M/1	4/gi;
-				$nuc =~ s/K/3	2/gi;
-				$nuc =~ s/Y/2	4/gi;
-				$nuc =~ s/S/3	4/gi;
-				$nuc =~ s/-/-9	-9/gi;
-				$nuc =~ s/N/-9	-9/gi;
-				print P2DATA $nuc, "\n";
+				if ($nuc eq "A") { $p2counts{"A"} += 2;}
+				elsif ($nuc eq "T") { $p2counts{"T"} += 2;}
+				elsif ($nuc eq  "C") { $p2counts{"C"} += 2;}
+				elsif ($nuc eq  "G") { $p2counts{"G"} += 2;}
+				elsif ($nuc eq  "R") { $p2counts{"A"}++; $p2counts{"G"}++;}
+				elsif ($nuc eq  "Y") { $p2counts{"C"}++; $p2counts{"T"}++;}
+				elsif ($nuc eq  "S") { $p2counts{"G"}++; $p2counts{"C"}++;}
+				elsif ($nuc eq  "W") { $p2counts{"A"}++; $p2counts{"T"}++;}
+				elsif ($nuc eq  "K") { $p2counts{"G"}++; $p2counts{"T"}++;}
+				elsif ($nuc eq "M") { $p2counts{"C"}++; $p2counts{"A"}++;}
 			}	
 		}
-		$pop++;
 	}
 
+	#choose first and second allele
+	#NOTE: Script will SKIP loci that are monomorphic in parental pops, or >2 alleles
+	my $first = "";
+	my $second = "";
+	for my $k1 (keys %p1counts){
+		if ($p1counts{$k1} > 0){
+			if ($first eq ""){
+				$first = $k1;
+			}elsif($second eq ""){
+				$second = $k1;
+			}else{
+				#print $first, "\t", $second, "---";
+				print("Locus $loc not bi-allelic. Skipping.\n");
+				next;
+			}
+		}
+	}
+	# if ($first eq $second){
+	# 	print $first, "\t", $second, "---";
+	# 	print "Something went wrong...\n";
+	# 	exit;
+	# }
+	
+	if ($first eq ""){
+		print("Locus $loc had no alleles in parental population 1. Skipping.\n");
+		next;
+	}
+	for my $k2 (keys %p2counts){
+		if ($p2counts{$k2} > 0){
+			if($first ne $k2 && $second eq ""){
+				$second = $k2;
+			}elsif($second eq $k2 || $first eq $k2){
+				next;
+			}else{
+				#print $first, "\t", $second, " --- ", $k2," --- ";
+				print("Locus $loc not bi-allelic. Skipping.\n");
+				next;
+			}
+		}
+	}
+	if ($second eq ""){
+		print("Locus $loc monomorphic in parental populations. Skipping.\n");
+		next;
+	}
+
+	#write to parental files
+	print P1DATA "locus ",$loc, "\n";
+	print P1DATA $p1counts{$first}, "\t", $p1counts{$second}, "\n";
+	print P2DATA "locus ",$loc, "\n";
+	print P2DATA $p2counts{$first}, "\t", $p2counts{$second}, "\n";
+	
 
 	#Populate admix file
+	print ADMIX "locus ",$loc, "\n";
 	if ($comb == 0){
-		$pop = 0;
-		print ADMIX "locus ",$loc, "\n";
+		my $pop = 0;
 		foreach my $id (@popA){
 			print ADMIX "pop ", $pop, "\n";
 			foreach my $ind (keys %{$popaRef}){
 				if ($assignRef->{$ind} eq $id){
+					my %indcounts = (
+						"A" => 0,
+						"T" => 0,
+						"G" => 0,
+						"C" => 0
+					);
 					my $nuc = ${$popaRef->{$ind}}->[$loc];	
-					$nuc =~ s/A/1	1/gi;
-					$nuc =~ s/T/2	2/gi;
-					$nuc =~ s/G/3	3/gi;
-					$nuc =~ s/C/4	4/gi;
-					$nuc =~ s/W/1	2/gi;
-					$nuc =~ s/R/1	3/gi;
-					$nuc =~ s/M/1	4/gi;
-					$nuc =~ s/K/3	2/gi;
-					$nuc =~ s/Y/2	4/gi;
-					$nuc =~ s/S/3	4/gi;
-					$nuc =~ s/-/-9	-9/gi;
-					$nuc =~ s/N/-9	-9/gi;
-					print ADMIX $nuc, "\n";
+					if ($nuc eq "A") { $indcounts{"A"} += 2;}
+					elsif ($nuc eq "T") { $indcounts{"T"} += 2;}
+					elsif ($nuc eq  "C") { $indcounts{"C"} += 2;}
+					elsif ($nuc eq  "G") { $indcounts{"G"} += 2;}
+					elsif ($nuc eq  "R") { $indcounts{"A"}++; $indcounts{"G"}++;}
+					elsif ($nuc eq  "Y") { $indcounts{"C"}++; $indcounts{"T"}++;}
+					elsif ($nuc eq  "S") { $indcounts{"G"}++; $indcounts{"C"}++;}
+					elsif ($nuc eq  "W") { $indcounts{"A"}++; $indcounts{"T"}++;}
+					elsif ($nuc eq  "K") { $indcounts{"G"}++; $indcounts{"T"}++;}
+					elsif ($nuc eq "M") { $indcounts{"C"}++; $indcounts{"A"}++;}
+					
+					#write genotype for this individual
+					if(($indcounts{$first} + $indcounts{$second}) != 2){
+						print ADMIX "-9\t-9\n";
+					}else{
+						print ADMIX $indcounts{$first}, "\t", $indcounts{$second}, "\n";
+					}
 				}	
 			}
 			$pop++;
@@ -170,35 +231,41 @@ for (my $loc = 0; $loc < $nchar; $loc++){
 		foreach my $id (@popA){
 			foreach my $ind (keys %{$popaRef}){
 				if ($assignRef->{$ind} eq $id){
+					my %indcounts = (
+						"A" => 0,
+						"T" => 0,
+						"G" => 0,
+						"C" => 0
+					);
 					my $nuc = ${$popaRef->{$ind}}->[$loc];	
-					$nuc =~ s/A/1	1/gi;
-					$nuc =~ s/T/2	2/gi;
-					$nuc =~ s/G/3	3/gi;
-					$nuc =~ s/C/4	4/gi;
-					$nuc =~ s/W/1	2/gi;
-					$nuc =~ s/R/1	3/gi;
-					$nuc =~ s/M/1	4/gi;
-					$nuc =~ s/K/3	2/gi;
-					$nuc =~ s/Y/2	4/gi;
-					$nuc =~ s/S/3	4/gi;
-					$nuc =~ s/-/-9	-9/gi;
-					$nuc =~ s/N/-9	-9/gi;
-					print ADMIX $nuc, "\n";
+					if ($nuc eq "A") { $indcounts{"A"} += 2;}
+					elsif ($nuc eq "T") { $indcounts{"T"} += 2;}
+					elsif ($nuc eq  "C") { $indcounts{"C"} += 2;}
+					elsif ($nuc eq  "G") { $indcounts{"G"} += 2;}
+					elsif ($nuc eq  "R") { $indcounts{"A"}++; $indcounts{"G"}++;}
+					elsif ($nuc eq  "Y") { $indcounts{"C"}++; $indcounts{"T"}++;}
+					elsif ($nuc eq  "S") { $indcounts{"G"}++; $indcounts{"C"}++;}
+					elsif ($nuc eq  "W") { $indcounts{"A"}++; $indcounts{"T"}++;}
+					elsif ($nuc eq  "K") { $indcounts{"G"}++; $indcounts{"T"}++;}
+					elsif ($nuc eq "M") { $indcounts{"C"}++; $indcounts{"A"}++;}
+					
+					#write genotype for this individual
+					if(($indcounts{$first} + $indcounts{$second}) != 2){
+						print ADMIX "-9\t-9\n";
+					}else{
+						print ADMIX $indcounts{$first}, "\t", $indcounts{$second}, "\n";
+					}
 				}	
 			}
 		}
-		
-		
-		
-	}	
-	
+	}
 }
 
-print "Done writing P1DATA file <p1data.csv>\n";
+print "Done writing P1DATA file <bgc_p1in.txt>\n";
 close P1DATA;
-print "Done writing P2DATA file <p2data.csv>\n";
+print "Done writing P2DATA file <bgc_p2in.txt>\n";
 close P2DATA;
-print "Done writing ADMIX file <admix.csv>\n\n";
+print "Done writing ADMIX file <bgc_admix.txt>\n\n";
 close ADMIX;
 
 
@@ -217,7 +284,6 @@ close ADMIX;
 	print "\t-2	: Identifier for population 2 (include multiple as: pop1+pop2)\n";
 	print "\t-a	: Identifier for admixed population(s) (include multiple as: pop1+pop2)\n";
 	print "\t-i	: Path to input file (phylip)\n";
-	print "\t-o	: Output file name. [Default = out.phy]\n";
 	print "\t-c	: Combine admixed populations under a single label [boolean]\n";
 	print "\t-h	: Displays this help message\n";
 	print "\n\n";
