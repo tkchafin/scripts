@@ -15,7 +15,7 @@ def main():
 			#directly transfer header lines
 			if line[0] == "#":
 				if line[1] != "#":
-					print("##FORMAT=<ID=AD,Number=.,Type=Integer,Description=\"Allelic depths for the reference and alternate alleles in the order listed\">")
+					f.write("##FORMAT=<ID=AD,Number=.,Type=Integer,Description=\"Allelic depths for the reference and alternate alleles in the order listed\">\n")
 				f.write(line)
 				f.write("\n")
 				
@@ -33,7 +33,7 @@ def main():
 					print("Something wrong with VCF. Field 8 should be GT:DP:CATG")
 					sys.exit()
 				for idx, sample in enumerate(fields[9:]):
-					fixed=fix_sample(sample, ref, alt)
+					fixed=str(fix_sample(sample, ref, alt))+":"
 					fields[idx+9] = fixed
 					#print(sample, " -- ", fixed)
 				f.write("\t".join(fields))
