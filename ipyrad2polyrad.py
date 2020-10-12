@@ -14,8 +14,11 @@ def main():
 			line=line.strip()
 			#directly transfer header lines
 			if line[0] == "#":
+				if line[1] != "#":
+					print("##FORMAT=<ID=AD,Number=.,Type=Integer,Description=\"Allelic depths for the reference and alternate alleles in the order listed\">")
 				f.write(line)
 				f.write("\n")
+				
 			else:
 				fields=line.split("\t")
 				ref=get_index(fields[3].split(","))
