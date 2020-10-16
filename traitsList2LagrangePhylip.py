@@ -9,25 +9,55 @@ def main():
 	
 	traits=set()
 	samples=dict()
+	map=dict()
 	
+	if params.map:
+		with open(params.map, "r") as m:
+			for line in m:
+				line=line.strip()
+				if len(line)==0:
+					continue
+				stuff=line.split()
+				if len(stuff) >2: 
+					print("ERROR: Too many elements --",line)
+				else:
+					if stuff[0] in map.keys():
+						map[stuff[0]].append(stuff[1])
+					else:
+						map[stuff[0]]=list()
+						map[stuff[0]].append(stuff[1])
+
 	with open(params.tab, "r") as t:
 		for line in t:
 			line=line.strip()
 			if len(line) == 0:
 				continue
-			stuff=line.split()
+			stuff=line.split("\t")
 			if len(stuff) >2: 
 				print("ERROR: Too many elements --",line)
 			else:
 				samples[stuff[0]]=set()
+				#print(stuff[0])
+				#print(stuff)
 				if len(stuff) >1:
 					splitstuff=stuff[1].split(",")
 					for s in splitstuff:
-						samples[stuff[0]].add(s)
-						traits.add(s)
+						loc=s
+						if params.map and s in map.keys():
+							loc=map[s]
+							for l in loc:
+								samples[stuff[0]].add(l)
+								traits.add(l)
+							continue
+						else:
+							samples[stuff[0]].add(loc)
+							traits.add(loc)
+				#print(samples)
+				#sys.exit()
 		t.close()
 	#print(traits)
 	#sys.exit()
+
 
 	trlen=len(traits)
 	slen=len(samples)
@@ -37,6 +67,7 @@ def main():
 		#print(samples[samp])
 		oline = str(samp) + "\t"
 		#if no traits, report and skip
+		#print(samples[samp])
 		if len(samples[samp]) < 1:
 			if not rep:
 				rep=True
@@ -69,7 +100,7 @@ class parseArgs():
 	def __init__(self):
 		#Define options
 		try:
-			options, remainder = getopt.getopt(sys.argv[1:], 'ht:o:', \
+			options, remainder = getopt.getopt(sys.argv[1:], 'ht:o:m:', \
 			["help"])
 		except getopt.GetoptError as err:
 			print(err)
@@ -78,6 +109,7 @@ class parseArgs():
 		#Input params
 		self.tab=None
 		self.out="out.phy"
+		self.map=None
 
 
 		#First pass to see if help menu was called
@@ -97,6 +129,8 @@ class parseArgs():
 				self.tab=arg
 			elif opt=="o":
 				self.out=arg
+			elif opt=="m":
+				self.map=arg
 			else:
 				assert False, "Unhandled option %r"%opt
 
@@ -116,6 +150,7 @@ class parseArgs():
 		print ("Description: Converts table of the form Sample \t Trait,Trait,Trait to phylip 0/1 format, for LAGRANGE of BioGeoBEARS")
 		print("""
 		-t:	Tab-delimited trait table
+		-m: Option tab-delimited map grouping trait names
 		-o: Output file name [default=out.phy]
 """)
 		print()
