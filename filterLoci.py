@@ -151,6 +151,8 @@ def main():
 								aln_d=dict()
 								continue
 						aln_d=dict() #clear alignment
+						numSamp=0
+						numPIS=0
 
 			except IOError as e:
 				print("Couldn't read file %s: %s" %(params.input,e))
