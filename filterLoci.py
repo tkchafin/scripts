@@ -14,7 +14,7 @@ def main():
 	if params.whitelist:
 		with open(params.whitelist, "r") as wl:
 			for line in wl:
-				whitelist.append(line.strip())
+				whitelist.append(int(line.strip()))
 	if params.input:
 		if params.popmap:
 			print("Parsing popmap file...")
@@ -48,7 +48,7 @@ def main():
 				passing=dict()
 
 				for line in fh:
-					line = int(line.strip())
+					line = line.strip()
 					if not line:
 						continue
 					if line and \
