@@ -88,6 +88,9 @@ def main():
 								#f = str(params.out) + "_" + str(locNum) + ".fasta"
 								#writeFasta(aln_d, f)
 								passing[locNum]=aln_d
+								aln_d=dict()
+								numPIS=0
+								numSamp=0
 
 							if params.nex:
 								n = str(params.out) + "_" + str(locNum) + ".nex"
@@ -96,6 +99,9 @@ def main():
 									if aln_new:
 										#dict2nexus(n, aln_new)
 										passing[locNum]=aln_new
+										aln_d=dict()
+										numPIS=0
+										numSamp=0
 									else:
 										snaqFail+=1
 										passed -= 1
@@ -108,6 +114,9 @@ def main():
 									if len(aln_new) >= params.samples:
 										#dict2nexus(n, aln_new)
 										passing[locNum]=aln_new
+										aln_d=dict()
+										numPIS=0
+										numSamp=0
 									else:
 										snaqFail+=1
 										passed -= 1
@@ -120,6 +129,9 @@ def main():
 									if aln_new:
 										#dict2nexus(n, aln_new)
 										passing[locNum]=aln_new
+										aln_d=dict()
+										numPIS=0
+										numSamp=0
 									else:
 										snaqFail+=1
 										passed -= 1
@@ -132,6 +144,9 @@ def main():
 									if aln_new:
 										#dict2nexus(n, aln_new)
 										passing[locNum]=aln_new
+										aln_d=dict()
+										numPIS=0
+										numSamp=0
 									else:
 										snaqFail+=1
 										passed -= 1
@@ -142,6 +157,9 @@ def main():
 								else:
 									passing[locNum]=aln_d
 									dict2nexus(n, aln_d)
+									aln_d=dict()
+									numPIS=0
+									numSamp=0
 							numSamp=0
 							numPIS=0
 						else:
