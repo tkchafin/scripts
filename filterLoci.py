@@ -48,7 +48,7 @@ def main():
 				passing=dict()
 
 				for line in fh:
-					line = line.strip()
+					line = int(line.strip())
 					if not line:
 						continue
 					if line and \
