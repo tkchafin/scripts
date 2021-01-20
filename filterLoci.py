@@ -166,10 +166,14 @@ def main():
 							if numPIS < params.pis:
 								varsFail += 1
 								aln_d=dict()
+								numPIS=0
+								numSamp=0
 								continue
 							if numSamp < params.samples:
 								sampFail += 1
 								aln_d=dict()
+								numPIS=0
+								numSamp=0
 								continue
 						aln_d=dict() #clear alignment
 						numSamp=0
