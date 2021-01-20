@@ -97,6 +97,8 @@ def main():
 										snaqFail+=1
 										passed -= 1
 										aln_d=dict()
+										numPIS=0
+										numSamp=0
 										continue
 								elif params.snaqm:
 									aln_new = sampledSnaqM(aln_d,bestInds)
@@ -106,6 +108,8 @@ def main():
 									else:
 										snaqFail+=1
 										passed -= 1
+										numSamp=0
+										numPIS=0
 										aln_d=dict()
 										continue
 								elif params.snaqr:
@@ -116,6 +120,8 @@ def main():
 									else:
 										snaqFail+=1
 										passed -= 1
+										numSamp=0
+										numPIS=0
 										aln_d=dict()
 										continue
 								elif params.pomo:
@@ -126,6 +132,8 @@ def main():
 									else:
 										snaqFail+=1
 										passed -= 1
+										numSamp=0
+										numPIS=0
 										aln_d=dict()
 										continue
 								else:
