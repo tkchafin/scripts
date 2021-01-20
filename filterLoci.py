@@ -10,7 +10,7 @@ import random
 def main():
 	params = parseArgs()
 	
-	whitelist=None
+	whitelist=list()
 	if params.whitelist:
 		with open(params.whitelist, "r") as wl:
 			for line in wl:
@@ -71,7 +71,7 @@ def main():
 						allLoci.append(line)
 						locNum += 1
 						
-						if whitelist is not None:
+						if len(whitelist) > 0:
 							if locNum not in whitelist:
 								listFail+=1
 								aln_d=dict()
