@@ -79,7 +79,7 @@ def main():
 								numSamp=0
 								numPIS=0
 								continue
-						print(numSamp)
+						#print(numSamp)
 						if numPIS >= params.pis and numSamp >= params.samples:
 
 							passed += 1
