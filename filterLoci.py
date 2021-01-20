@@ -21,6 +21,7 @@ def main():
 			pop_assign = parsePopmap(params.popmap)
 
 		allLoci = list()
+		print("Requiring a minimum of", params.samples, "per locus")
 		locNum = 0
 		with open(params.input, "r") as fh:
 			try:
@@ -75,8 +76,10 @@ def main():
 							if locNum not in whitelist:
 								listFail+=1
 								aln_d=dict()
+								numSamp=0
+								numPIS=0
 								continue
-						
+						print(numSamp)
 						if numPIS >= params.pis and numSamp >= params.samples:
 
 							passed += 1
