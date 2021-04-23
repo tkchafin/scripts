@@ -270,41 +270,41 @@ class DNAalignment():
 						if len(sample[1]) != self.length:
 							print("Sequences not of equal length:",f)
 							sys.exit(1)
-def getName(self):
-	return(os.path.splitext(os.path.basename(self.filepath))[0])
+	def getName(self):
+		return(os.path.splitext(os.path.basename(self.filepath))[0])
 
-#method to read alignment from NEXUS
-def readNexus(self):
-	with open(self.filepath, 'r') as fh:
-		try:
-			start = False
-			for line in fh:
-				line = line.strip()
-				if not line:
-					continue
-				#line = line.replace(" ","")
+	#method to read alignment from NEXUS
+	def readNexus(self):
+		with open(self.filepath, 'r') as fh:
+			try:
+				start = False
+				for line in fh:
+					line = line.strip()
+					if not line:
+						continue
+					#line = line.replace(" ","")
 
-				if line.lower() == "matrix":
-					start = True
-					continue
+					if line.lower() == "matrix":
+						start = True
+						continue
 
-				if start: #we're in the matrix!
-					if line in [";", "END;", "end;"]:
-						start = False
-						break
-					else:
-						line = line.replace("\'","")
-						line = line.replace("\"","")
-						stuff = line.split()
-						yield([stuff[0],stuff[1]])
-		except IOError as e:
-			print("Could not read file:",e)
-			sys.exit(1)
-		except Exception as e:
-			print("Unexpected error:",e)
-			sys.exit(1)
-		finally:
-			fh.close()
+					if start: #we're in the matrix!
+						if line in [";", "END;", "end;"]:
+							start = False
+							break
+						else:
+							line = line.replace("\'","")
+							line = line.replace("\"","")
+							stuff = line.split()
+							yield([stuff[0],stuff[1]])
+			except IOError as e:
+				print("Could not read file:",e)
+				sys.exit(1)
+			except Exception as e:
+				print("Unexpected error:",e)
+				sys.exit(1)
+			finally:
+				fh.close()
 
 	#Function to read partitions from a NEXUS-formatted SETS block
 	# def loadPartitions(self, f):
