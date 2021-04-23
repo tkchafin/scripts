@@ -54,7 +54,7 @@ def main():
 				if ind not in lookup:
 					print("Sample", ind, "found in popmap but not in data. Deleting it.")
 					blacklist.append(ind)
-			for in in blacklist:
+			for ind in blacklist:
 				del popmap[ind]
 			#make flattened popmap
 			flatmap=make2Dpopmap(popmap)
