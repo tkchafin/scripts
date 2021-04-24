@@ -139,7 +139,7 @@ def main():
 				for a in alignments:
 					full_len += a.length
 				header = "#NEXUS\n\nBEGIN DATA;\nDIMENSIONS NTAX=" + str(len(lookup.keys())) + " NCHAR=" + str(full_len) + ";\n"
-				header = header + "FORMAT DATATYPE=DNA MISSING=? GAP=-;\n\nMATRIX\n"
+				header = header + "FORMAT DATATYPE=DNA MISSING=N GAP=-;\n\nMATRIX\n"
 				fh.write(header)
 				
 				if params.popmap is not None:
@@ -170,10 +170,6 @@ def main():
 				#end of data block
 				l = "\n;END;\n"
 				fh.write(l)
-				
-				partline1 = "\nbegin sets;"
-				partline2 = "\ttaxpartition popmap ="
-				fh.write("{}\n{}\n".format(partline1, partline2))
 
 				#write charsets
 				print("Adding CHARSET blocks...")
@@ -184,6 +180,10 @@ def main():
 					cur += a.length
 				out += "END;\n\n"
 				fh.write(out)
+				
+				partline1 = "\nbegin sets;"
+				partline2 = "\ttaxpartition popmap ="
+				fh.write("{}\n{}\n".format(partline1, partline2))
 				
 				#if -t, write taxpartition block 
 				if params.popmap is not None:
