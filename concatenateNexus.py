@@ -70,7 +70,7 @@ def main():
 					try:
 						slen = aln.length
 						header = "#NEXUS\n\nBEGIN DATA;\nDIMENSIONS NTAX=" + str(len(lookup.keys())) + " NCHAR=" + str(slen) + ";\n"
-						header = header + "FORMAT DATATYPE=DNA MISSING=? GAP=-;\n\nMATRIX\n"
+						header = header + "FORMAT DATATYPE=DNA MISSING=N GAP=-;\n\nMATRIX\n"
 						fh.write(header)
 						if params.popmap is not None:
 							for pop in sorted(list(flatmap.keys())):
@@ -79,7 +79,7 @@ def main():
 									for aln in alignments:
 										#if sample not in alignment, write Ns
 										if samp not in aln.alignment.keys():
-											l += str(Nrepeats("?", aln.length))
+											l += str(Nrepeats("N", aln.length))
 										else:
 											l += str(aln.alignment[samp])
 									l += "\n"
@@ -88,7 +88,7 @@ def main():
 							for samp in sorted(lookup.keys()):
 								#if sample not in alignment, write Ns
 								if samp not in aln.alignment.keys():
-									l = str(samp) + "\t" + str(Nrepeats("?", aln.length)) + "\n"
+									l = str(samp) + "\t" + str(Nrepeats("N", aln.length)) + "\n"
 									fh.write(l)
 								else:
 									l = str(samp) + "\t" + str(aln.alignment[samp]) + "\n"
