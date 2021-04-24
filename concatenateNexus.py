@@ -96,6 +96,11 @@ def main():
 						last = ";\nEND;\n"
 						fh.write(last)
 						
+
+						partline1 = "\nbegin sets;"
+						partline2 = "\ttaxpartition popmap ="
+						fh.write("{}\n{}\n".format(partline1, partline2))
+						
 						#if -t, write taxpartition block 
 						if params.popmap is not None:
 							popnum = 1
@@ -165,6 +170,10 @@ def main():
 				#end of data block
 				l = "\n;END;\n"
 				fh.write(l)
+				
+				partline1 = "\nbegin sets;"
+				partline2 = "\ttaxpartition popmap ="
+				fh.write("{}\n{}\n".format(partline1, partline2))
 
 				#write charsets
 				print("Adding CHARSET blocks...")
