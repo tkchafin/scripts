@@ -31,7 +31,8 @@ def main():
 	#make subset datasets
 	removes = [s for s in l if s != placeholder]
 	left_cf = subset_df_blacklist(cf, removes) #keeps placeholder
-	right_cf = subset_df_whitelist(cf, l)
+	removes2 = [s for s in tree.get_tip_labels() if s not in l]
+	right_cf = subset_df_blacklist(cf, removes2)
 	left_tree = tree_remove_blacklist(tree, removes)
 	#print(left_tree.get_tip_labels())
 	right_tree = tree_remove_whitelist(tree, l)
@@ -58,19 +59,12 @@ def tree_remove_blacklist(tree, badbois):
 	return(tree.drop_tips(names=rem))
 
 def subset_df_blacklist(df, badbois):
-	ret = df
+	ret = df.copy()
 	for i in badbois:
-		bools = df.eq(i).any(1)
-		ret = df[bools]
+		bools = ret.eq(i).any(1)
+		ret = ret[~bools]
 	return(ret)
 
-def subset_df_whitelist(df, goodbois):
-	ret = df
-	for i in goodbois:
-		bools = df.eq(i).any(1)
-		#print(bools)
-		ret = df[~bools]
-	return(ret)
 
 #Object to parse command-line arguments
 class parseArgs():
