@@ -30,9 +30,6 @@ if( $opts{h} ){
   &help;
   die "Exiting program because help flag was used.\n\n";
 }
- 
-#lol 
-&stupidpic;
 
 # parse the command line
 my( $file, $individual, $column, $out, $type, $minfreq, $remMonomorph, $remSingleton, $biSNP, $gaps, $rand ) = &parsecom( \%opts );
@@ -586,65 +583,3 @@ sub reportMatrixContent{
 	print "%\n\n";
 	
 }
-
-#####################################################################################################
-# prints a stupid ascii image just to be annoying
-sub stupidpic{
-	print '                                                                                        
-                                                      T                                            
-                                                     M                                             
-                                              +MI   :                                              
-                                                  ?.M ?MM888DMD,                                   
-                                                   M88888888888888DN.                              
-                                                 M88888888888888888888N~                           
-                                                8888888888888888888888888M                         
-                                              ,88888888888888888888888888888O                      
-                                             .88888888888888888888888888888888M                    
-                                            =88888888888888888888888888888888888M                  
-                                           M88888888888888888888888888888888888888M                
-                                         D888888888N88888888888888888888888888888888O              
-                                             M8888MID888888888888888888888888N8888888D             
-                                            M8888MIIM8888M8888888888888888888MIIMD8888D.           
-                                           7888MDIIIM888MII888888888888888888IIIIIN ~M8M           
-                                           = IIIIIID88TTIIIM888DI8888M888888?IIIIIII.              
-                                             MIIIMIIMIIIII?M88M ,888IIMDIDDIIIM      ?             
-                                             M?IIIIIIIIII.      M8MMIIIIIIIII.        M            
-                                             MINIIIIIIII       ,    NIIIIIII$     R    N           
-                                          .MI?N8IIIIIIIN      &7    7IIIIIIM      M7  M           
-                                         .IIIIIIIMIIIII=      &&     DIIIIIIIIM        D           
-                                         MIIIIIIIIIIIIIM             ?IIIIIIIIIIM     M            
-                                         ?IIIDIIIIIIIIIIN           MIIIIIIIIIIIIIN M.             
-                                         IIIIIOIIIIIIIIIIM        ,IIIIIIIIIIIIIIIII$              
-                                         7IIIIIMIIIIIIIIIII?NMMM8IMIIIIIIIIIIIIIIIIIIM             
-                                         MIIIIIIIIIIIIIIIIMMMMM7IIIIIIIIIIIIIIIIIIIIIID            
-                                         .IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIM            
-                                          NIIIIIIIIIIIIIIMIIIIIIIIIIIIIIIIIIIIMM?IIMM             
-                                           NIIIIIIIIIIII7IIIIIIIIIMIIIIIIIIIIIIIIIIIIID.           
-                                             IMMNIIIIIIIIIIIIIIII7IIIIMIIIMIIIIIII?II?IIIIIII8.    
-                                                IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOIII?IIIIIIIIIII    
-                                                IIIIIIIIINCLETUSD7IIIIIIIIIIIIIIIIIIIIIIIIIIIIM    
-                                                IIIIIIMMMMMMM      O   IMM7IIIIIIIIIIIIIIIIID      
-                                                IIIIMMMMMMMMMMM::MIM     N   .OMMZIIIIIDN,         
-                                               :IIIMMMMMMMMMMMMIIIIM.,      M     ..             
-                                               NIIINZDOZZMMMMMDIII~             MN~               
-                                               IIIIMZZZZZZMMMIIIM                                 
-                                              DIIIIIIMMMMZIIIIIIIIM                                
-                                              IIIIIIIIIIIIIIIIIIIII,                               
-                                             OIIIIIIIIIIIIIIIIIIIIN                                
-                                             IIIIIIIIIIIIIIIIID..                                  
-                                            MIIIIIIIIIIIIIIII,                                     
-                                          ,IIIIIIIIIIIIIIIII?                                      
-                                        DIIMIIIIIIIIIIIIIIIN                                       
-                                    DOZZ7IIMIIIIIIIIIIIIIIO                                        
-                                :M7MZZZLOLI7IIIIIIIIIIIIII~                                        
-                             OYIIIIIZZZZMIIIIZIIIIIIIIIIIMN                                        
-                         ,MIIIIIIIIIMZZZZMIIIIIMIIIIIIIIIIIM                                       
-                       MIIIIIIIIIIIIIZZZZMMIIIIII7MMNMMIIIIZM                                      
-                    MIIIIIIIIIIIIIIIINZZZOIIMIIIIIIIIIIIII7ZZIO                                    
-                 .MIIIIIIIIIIIIIIIIIIMZZZZIIIINOIIIIIIIIIMZZZIIIM                                  
-
-'
-	
-}
-
-#####################################################################################################
