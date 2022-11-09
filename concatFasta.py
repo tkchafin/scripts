@@ -6,7 +6,7 @@ import sys
 def main():
 	if len(sys.argv) <= 1:
 		print("No files provided!")
-		print('Usage: ./concatFasta.py *.fasta - or - ./concatFasta.py 1.fas 2.fas...')
+		print('Usage: ./concatFasta.py outfile *.fasta - or - ./concatFasta.py outfile 1.fas 2.fas...')
 		sys.exit(1)
 	files = sys.argv[1:]
 
@@ -16,13 +16,14 @@ def main():
 	pre=None
 	samps=dict()
 	#loop through and get list of samples
-	for file in sorted(files):
+	for file in files[1:]:
 		for s in read_fasta(file):
 			samps[s[0]] = ""
-	
-	for file in sorted(files):
-		#print(file)
-		pre=file.split("_")[0]
+
+	print("Reading files in this order:")
+	for file in files[1:]:
+		print(file)
+		pre=file.split(".")[0]
 		#get seqlen
 		seqlen = None
 		#seen
@@ -36,9 +37,9 @@ def main():
 			if key not in seen:
 				samps[key] = samps[key] + Nrepeats("N", seqlen)
 
-	print("Using prefix from files to write output:",pre)
+	print("Writing output ",files[0])
 	oname = pre + ".fasta"
-	write_fasta(oname, samps)
+	write_fasta(files[0], samps)
 
 def Nrepeats(pattern, N):
 	ret = ""
